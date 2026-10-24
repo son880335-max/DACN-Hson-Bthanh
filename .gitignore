@@ -1,6 +1,4 @@
-# ==========================================
-# Chỉ theo dõi Frontend và Backend, bỏ qua các thư mục khác ở root
-# ==========================================
+
 /_helpers/
 /inputs/
 /work/
@@ -8,16 +6,14 @@
 *.docx
 *.pdf
 
-# File hệ điều hành & Editor
+
 .DS_Store
 Thumbs.db
 *.log
 .vscode/
 .idea/
 
-# ==========================================
-# Flutter / Dart (Frontend)
-# ==========================================
+
 Frontend/.dart_tool/
 Frontend/build/
 Frontend/.flutter-plugins
@@ -26,9 +22,7 @@ Frontend/.packages
 Frontend/*.iml
 Frontend/.idea/
 
-# ==========================================
-# Backend (Dành cho Node.js / Python / Java nếu có sau này)
-# ==========================================
+
 Backend/node_modules/
 Backend/dist/
 Backend/build/
