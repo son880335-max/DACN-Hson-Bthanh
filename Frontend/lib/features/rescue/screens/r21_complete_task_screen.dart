@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -8,10 +9,7 @@ import 'rescue_shell_screen.dart';
 class R21CompleteTaskScreen extends StatefulWidget {
   final String taskId;
 
-  const R21CompleteTaskScreen({
-    super.key,
-    required this.taskId,
-  });
+  const R21CompleteTaskScreen({super.key, required this.taskId});
 
   @override
   State<R21CompleteTaskScreen> createState() => _R21CompleteTaskScreenState();
@@ -19,9 +17,15 @@ class R21CompleteTaskScreen extends StatefulWidget {
 
 class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
   int _evacuatedPeople = 4;
-  final _shelterLocationController = TextEditingController(text: 'Trường THPT Chương Mỹ A (Khu sơ tán trung tâm)');
-  final _suppliesGivenController = TextEditingController(text: '04 Áo phao, 02 thùng nước lọc 20L, 02 thùng lương khô');
-  final _notesController = TextEditingController(text: '4 người dân an toàn, sức khỏe ổn định, đã bàn giao cho ban y tế dã chiến');
+  final _shelterLocationController = TextEditingController(
+    text: 'Trường THPT Chương Mỹ A (Khu sơ tán trung tâm)',
+  );
+  final _suppliesGivenController = TextEditingController(
+    text: '04 Áo phao, 02 thùng nước lọc 20L, 02 thùng lương khô',
+  );
+  final _notesController = TextEditingController(
+    text: '4 người dân an toàn, sức khỏe ổn định, đã bàn giao cho ban y tế dã chiến',
+  );
   bool _isSaving = false;
 
   void _finishTask() {
@@ -34,16 +38,22 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
           barrierDismissible: false,
           builder: (dialogCtx) => AlertDialog(
             backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
                 const SizedBox(width: 8),
-                Text('Nhiệm vụ hoàn thành!', style: AppTypography.cardTitle),
+                Text('Chưa lưu kết quả', style: AppTypography.cardTitle),
               ],
             ),
             content: Text(
-              'Biên bản hoàn thành ${widget.taskId} đã được lưu và cập nhật lên hệ thống điều phối cứu trợ.',
+              'Chức năng xác nhận hoàn thành chưa khả dụng. Chưa lưu kết quả hoặc thay đổi trạng thái yêu cầu.',
               style: AppTypography.body,
             ),
             actions: [
@@ -51,11 +61,18 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                 onPressed: () {
                   Navigator.of(dialogCtx).pop();
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const RescueShellScreen()),
-                    (route) => route.isFirst,
+                    MaterialPageRoute(
+                      builder: (_) => const RescueShellScreen(),
+                    ),
+                    (_) => false,
                   );
                 },
-                child: Text('Về danh sách nhiệm vụ', style: AppTypography.button.copyWith(color: AppColors.primary)),
+                child: Text(
+                  'Về danh sách nhiệm vụ',
+                  style: AppTypography.button.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
               ),
             ],
           ),
@@ -69,7 +86,7 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Báo cáo hoàn thành ${widget.taskId}',
+        title: 'Kết quả cứu trợ (minh họa)',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -79,16 +96,19 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Kết quả cứu trợ & Bàn giao', style: AppTypography.sectionTitle),
+              Text('Kết quả cứu trợ', style: AppTypography.sectionTitle),
               const SizedBox(height: 8),
               Text(
-                'Ghi nhận số lượng người và tiếp tế thực tế đã thực hiện để ban điều phối cập nhật tổng số liệu cứu trợ toàn địa bàn.',
+                'Biểu mẫu minh họa, chưa hỗ trợ lưu kết quả cứu trợ.',
                 style: AppTypography.body,
               ),
               const SizedBox(height: 20),
 
               // People count input
-              Text('Số người đã hỗ trợ an toàn', style: AppTypography.cardTitle),
+              Text(
+                'Số người đã hỗ trợ an toàn',
+                style: AppTypography.cardTitle,
+              ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -100,11 +120,20 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('$_evacuatedPeople người', style: AppTypography.cardTitle.copyWith(color: AppColors.primaryDark)),
+                    Text(
+                      '$_evacuatedPeople người',
+                      style: AppTypography.cardTitle.copyWith(
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: AppColors.primary, size: 28),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
                           onPressed: () {
                             if (_evacuatedPeople > 1) {
                               setState(() => _evacuatedPeople--);
@@ -112,7 +141,11 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                           },
                         ),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 28),
+                          icon: const Icon(
+                            Icons.add_circle_outline,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
                           onPressed: () {
                             setState(() => _evacuatedPeople++);
                           },
@@ -125,7 +158,10 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
               const SizedBox(height: 16),
 
               // Location of handover
-              Text('Địa điểm tiếp nhận / Bàn giao người dân', style: AppTypography.cardTitle),
+              Text(
+                'Địa điểm bàn giao người dân',
+                style: AppTypography.cardTitle,
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _shelterLocationController,
@@ -133,7 +169,9 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -147,7 +185,9 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -162,14 +202,16 @@ class _R21CompleteTaskScreenState extends State<R21CompleteTaskScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
               // Submit
               AppButton(
-                text: 'Xác nhận & Hoàn tất nhiệm vụ',
+                text: 'Hoàn thành cứu trợ',
                 icon: Icons.check,
                 isLoading: _isSaving,
                 onPressed: _finishTask,

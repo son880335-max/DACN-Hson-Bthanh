@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -14,7 +15,7 @@ class M02AdminDashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppHeader(
-        title: 'Tổng quan điều phối cứu trợ',
+        title: 'Tổng quan cứu trợ (minh họa)',
         showBackButton: false,
       ),
       body: SafeArea(
@@ -33,15 +34,27 @@ class M02AdminDashboardScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning, color: AppColors.danger, size: 28),
+                    const Icon(
+                      Icons.warning,
+                      color: AppColors.danger,
+                      size: 28,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Báo động lũ cấp 3 - Sông Bùi', style: AppTypography.cardTitle.copyWith(color: AppColors.danger)),
+                          Text(
+                            'Báo động lũ cấp 3 - Sông Bùi',
+                            style: AppTypography.cardTitle.copyWith(
+                              color: AppColors.danger,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text('Mực nước hiện tại vượt báo động 3: +0.45m. Ưu tiên sơ tán các xã vùng trũng.', style: AppTypography.secondary),
+                          Text(
+                            'Mực nước hiện tại vượt báo động 3: +0.45m. Ưu tiên sơ tán các xã vùng trũng.',
+                            style: AppTypography.secondary,
+                          ),
                         ],
                       ),
                     ),
@@ -51,7 +64,7 @@ class M02AdminDashboardScreen extends StatelessWidget {
               const SizedBox(height: 20),
 
               // KPI Stats Grid
-              Text('Chỉ số vận hành toàn hệ thống', style: AppTypography.sectionTitle),
+              Text('Số liệu minh họa', style: AppTypography.sectionTitle),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -96,7 +109,7 @@ class M02AdminDashboardScreen extends StatelessWidget {
                     child: _buildKpiCard(
                       title: 'Lực lượng túc trực',
                       value: '24',
-                      sub: 'Đội thuyền & ca nô',
+                      sub: 'Đội thuyền và ca nô',
                       color: AppColors.primaryDark,
                       bgColor: AppColors.surfaceContainerLow,
                       icon: Icons.groups,
@@ -110,15 +123,25 @@ class M02AdminDashboardScreen extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Yêu cầu cấp bách cần điều phối', style: AppTypography.sectionTitle),
+                    child: Text(
+                      'Yêu cầu cấp bách cần điều phối',
+                      style: AppTypography.sectionTitle,
+                    ),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const M03AdminRequestsLookupScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const M03AdminRequestsLookupScreen(),
+                        ),
                       );
                     },
-                    child: Text('Xem tất cả', style: AppTypography.button.copyWith(color: AppColors.primary)),
+                    child: Text(
+                      'Xem tất cả',
+                      style: AppTypography.button.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -181,7 +204,10 @@ class M02AdminDashboardScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(value, style: AppTypography.pageTitle.copyWith(color: color, fontSize: 32)),
+          Text(
+            value,
+            style: AppTypography.pageTitle.copyWith(color: color, fontSize: 32),
+          ),
           const SizedBox(height: 4),
           Text(sub, style: AppTypography.secondary.copyWith(fontSize: 12)),
         ],
@@ -201,7 +227,10 @@ class M02AdminDashboardScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.danger.withOpacity(0.4), width: 1.5),
+        border: Border.all(
+          color: AppColors.danger.withOpacity(0.4),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,21 +238,33 @@ class M02AdminDashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(id, style: AppTypography.cardTitle.copyWith(color: AppColors.danger)),
+              Text(
+                id,
+                style: AppTypography.cardTitle.copyWith(
+                  color: AppColors.danger,
+                ),
+              ),
               const StatusChip(status: RequestStatus.waiting),
             ],
           ),
           const SizedBox(height: 6),
           Text(title, style: AppTypography.bodyMedium),
           const SizedBox(height: 4),
-          Text(address, style: AppTypography.secondary, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            address,
+            style: AppTypography.secondary,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 12),
           AppButton(
-            text: 'Điều phối đội cứu trợ ngay',
+            text: 'Phân công đội cứu hộ',
             icon: Icons.send_outlined,
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đang mở màn hình phân công đội cho $id...')),
+                SnackBar(
+                  content: Text('Chưa hỗ trợ phân công đội trên màn hình này.'),
+                ),
               );
             },
           ),

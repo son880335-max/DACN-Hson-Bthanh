@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Chụp ảnh bổ sung cho yêu cầu cứu trợ khi bạn chọn chụp ảnh. Bạn có thể tiếp tục không có ảnh.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Hỗ trợ ứng dụng camera lưu và khôi phục ảnh do bạn chụp cho yêu cầu cứu trợ.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Xác định vị trí khi bạn bấm lấy GPS. Bạn có thể ghim vị trí nếu không cấp quyền.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

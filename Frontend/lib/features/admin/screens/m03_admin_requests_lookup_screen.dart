@@ -1,4 +1,12 @@
+import '../../../core/data/request_presentation.dart';
+
 import 'package:flutter/material.dart';
+
+import '../../citizen/screens/c08_request_detail_waiting_screen.dart';
+import '../../../core/data/relief_repository.dart';
+import '../../../core/data/request_draft.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_header.dart';
@@ -8,98 +16,39 @@ class M03AdminRequestsLookupScreen extends StatefulWidget {
   const M03AdminRequestsLookupScreen({super.key});
 
   @override
-  State<M03AdminRequestsLookupScreen> createState() => _M03AdminRequestsLookupScreenState();
+  State<M03AdminRequestsLookupScreen> createState() =>
+      _M03AdminRequestsLookupScreenState();
 }
 
-class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScreen> {
+class _M03AdminRequestsLookupScreenState
+    extends State<M03AdminRequestsLookupScreen> {
   final _searchController = TextEditingController();
   int _selectedFilter = 0; // 0: Tất cả, 1: Khẩn cấp, 2: Đang chờ, 3: Đã xử lý
 
-  final List<Map<String, dynamic>> _allRequests = [
-    {
-      'id': 'CR-0247',
-      'citizen': 'Nguyễn Văn An',
-      'phone': '0912 345 678',
-      'address': 'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
-      'needs': 'Sơ tán khẩn cấp (4 người: 2 người già, 1 trẻ nhỏ)',
-      'status': RequestStatus.waiting,
-      'isUrgent': true,
-      'time': '18:20 23/10',
-    },
-    {
-      'id': 'CR-0251',
-      'citizen': 'Hoàng Thị Mai',
-      'phone': '0988 776 554',
-      'address': 'Thôn Nhân Lý, Xã Nam Phương Tiến',
-      'needs': 'Y tế khẩn cấp: Sản phụ chuyển dạ cần ca nô',
-      'status': RequestStatus.waiting,
-      'isUrgent': true,
-      'time': '18:15 23/10',
-    },
-    {
-      'id': 'CR-0238',
-      'citizen': 'Đặng Quốc Bảo',
-      'phone': '0903 221 445',
-      'address': 'Khu gò đồi, Xã Tân Tiến, Chương Mỹ',
-      'needs': 'Tiếp tế nước uống & lương khô cho 6 người',
-      'status': RequestStatus.inProgress,
-      'isUrgent': false,
-      'time': '17:30 23/10',
-    },
-    {
-      'id': 'CR-0199',
-      'citizen': 'Phạm Thu Hằng',
-      'phone': '0977 443 219',
-      'address': 'Khu tập thể ven sông, Chương Mỹ',
-      'needs': 'Đã hoàn tất đưa về điểm sơ tán THPT Chương Mỹ A',
-      'status': RequestStatus.completed,
-      'isUrgent': false,
-      'time': '16:00 23/10',
-    },
-  ];
+  List<Json> get _allRequests =>
+      reliefRepository.items.map(requestCard).toList();
+  @override
+  void initState() {
+    super.initState();
+    reliefRepository.addListener(_changed);
+    reliefRepository.refresh();
+  }
 
-  void _assignTeamDialog(Map<String, dynamic> req) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Điều phối đội cứu hộ cho ${req['id']}', style: AppTypography.cardTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Người dân: ${req['citizen']} (${req['phone']})', style: AppTypography.bodyMedium),
-            const SizedBox(height: 4),
-            Text('Nhu cầu: ${req['needs']}', style: AppTypography.secondary),
-            const SizedBox(height: 12),
-            Text('Chọn đội cứu hộ sẵn sàng:', style: AppTypography.secondaryMedium),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.directions_boat, color: AppColors.primary),
-              title: const Text('Đội Hương Thủy (Cách 2.1km)'),
-              subtitle: const Text('02 Thuyền hơi • 4 thành viên'),
-              trailing: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Đã điều phối Đội Hương Thủy cho yêu cầu ${req['id']} thành công!')),
-                  );
-                },
-                child: const Text('Gán'),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Đóng', style: AppTypography.button.copyWith(color: AppColors.textSecondary)),
-          ),
-        ],
-      ),
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    reliefRepository.removeListener(_changed);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _assignTeamDialog(Json request) {
+    showFailure(
+      context,
+      'Chức năng phân công đội chưa khả dụng. Chưa thay đổi đội phụ trách.',
     );
   }
 
@@ -108,7 +57,8 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
     final query = _searchController.text.toLowerCase().trim();
     final filtered = _allRequests.where((req) {
       if (query.isNotEmpty) {
-        final match = req['id'].toLowerCase().contains(query) ||
+        final match =
+            req['id'].toLowerCase().contains(query) ||
             req['citizen'].toLowerCase().contains(query) ||
             req['address'].toLowerCase().contains(query) ||
             req['phone'].contains(query);
@@ -122,13 +72,22 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: const AppHeader(
-        title: 'Tra cứu & Điều phối yêu cầu',
+      appBar: AppHeader(
+        title: 'Yêu cầu cứu trợ',
+        actions: [
+          IconButton(
+            tooltip: 'Tải lại danh sách',
+            onPressed: () => reliefRepository.refresh(),
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
         showBackButton: false,
       ),
       body: SafeArea(
         child: Column(
           children: [
+            const SyncStatus(),
+            if (reliefRepository.loading) const LinearProgressIndicator(),
             // Search Input
             Container(
               color: AppColors.surface,
@@ -138,12 +97,21 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
                 onChanged: (_) => setState(() {}),
                 style: AppTypography.body,
                 decoration: InputDecoration(
-                  hintText: 'Tìm theo mã đơn, SĐT, tên hoặc địa bàn...',
-                  prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                  hintText: 'Tìm mã yêu cầu, số điện thoại, tên, địa chỉ',
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                  ),
                   filled: true,
                   fillColor: AppColors.canvas,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
@@ -158,11 +126,20 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
                   children: [
                     _buildFilterChip(0, 'Tất cả (${_allRequests.length})'),
                     const SizedBox(width: 8),
-                    _buildFilterChip(1, 'Khẩn cấp (2)'),
+                    _buildFilterChip(
+                      1,
+                      'Khẩn cấp (${_allRequests.where((r) => r['isUrgent'] == true).length})',
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(2, 'Chờ phân công (2)'),
+                    _buildFilterChip(
+                      2,
+                      'Chờ tiếp nhận (${_allRequests.where((r) => r['stage'] == 'waiting').length})',
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterChip(3, 'Đã an toàn (1)'),
+                    _buildFilterChip(
+                      3,
+                      'Đã hoàn thành (${_allRequests.where((r) => r['stage'] == 'completed').length})',
+                    ),
                   ],
                 ),
               ),
@@ -172,7 +149,12 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
             // List of Requests
             Expanded(
               child: filtered.isEmpty
-                  ? Center(child: Text('Không tìm thấy yêu cầu phù hợp.', style: AppTypography.body))
+                  ? Center(
+                      child: Text(
+                        'Không tìm thấy yêu cầu phù hợp.',
+                        style: AppTypography.body,
+                      ),
+                    )
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: filtered.length,
@@ -189,51 +171,117 @@ class _M03AdminRequestsLookupScreenState extends State<M03AdminRequestsLookupScr
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
                                   Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(req['id'] as String, style: AppTypography.cardTitle.copyWith(color: AppColors.primary)),
+                                      Text(
+                                        shortRequestId(req['id']),
+                                        style: AppTypography.cardTitle.copyWith(
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
                                       const SizedBox(width: 8),
                                       if (req['isUrgent'] == true)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: AppColors.dangerContainer,
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
-                                          child: Text('Khẩn cấp', style: AppTypography.secondary.copyWith(color: AppColors.danger, fontSize: 11, fontWeight: FontWeight.bold)),
+                                          child: Text(
+                                            'Khẩn cấp',
+                                            style: AppTypography.secondary
+                                                .copyWith(
+                                                  color: AppColors.danger,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
                                         ),
                                     ],
                                   ),
-                                  StatusChip(status: req['status'] as RequestStatus),
+                                  StatusChip(
+                                    status: req['status'] as RequestStatus,
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text('${req['citizen']} • ${req['phone']}', style: AppTypography.bodyMedium),
+                              Text(
+                                '${req['citizen']} • ${req['phone']}',
+                                style: AppTypography.bodyMedium,
+                              ),
                               const SizedBox(height: 4),
-                              Text(req['address'] as String, style: AppTypography.secondary),
+                              Text(
+                                req['address'] as String,
+                                style: AppTypography.secondary,
+                              ),
                               const SizedBox(height: 4),
-                              Text('Nhu cầu: ${req['needs']}', style: AppTypography.secondaryMedium),
-                              const Divider(height: 16, color: AppColors.borderSubtle),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Text(
+                                'Nhu cầu: ${req['needs']}',
+                                style: AppTypography.secondaryMedium,
+                              ),
+                              TextButton.icon(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        C08RequestDetailWaitingScreen(
+                                          requestId: req['id'],
+                                        ),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.fact_check_outlined),
+                                label: const Text('Xem chi tiết'),
+                              ),
+                              const Divider(
+                                height: 16,
+                                color: AppColors.borderSubtle,
+                              ),
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
-                                  Text(req['time'] as String, style: AppTypography.secondary.copyWith(fontSize: 13)),
+                                  Text(
+                                    req['time'] as String,
+                                    style: AppTypography.secondary.copyWith(
+                                      fontSize: 13,
+                                    ),
+                                  ),
                                   if (req['status'] == RequestStatus.waiting)
                                     ElevatedButton.icon(
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: AppColors.primary,
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 8,
+                                        ),
                                       ),
-                                      icon: const Icon(Icons.person_add_alt_1, size: 18),
-                                      label: const Text('Gán đội cứu hộ'),
+                                      icon: const Icon(
+                                        Icons.person_add_alt_1,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Phân công đội'),
                                       onPressed: () => _assignTeamDialog(req),
                                     )
                                   else
-                                    Text('Đã có đơn vị xử lý', style: AppTypography.secondaryMedium.copyWith(color: AppColors.success)),
+                                    Text(
+                                      'Đã có đội phụ trách',
+                                      style: AppTypography.secondaryMedium
+                                          .copyWith(color: AppColors.success),
+                                    ),
                                 ],
                               ),
                             ],

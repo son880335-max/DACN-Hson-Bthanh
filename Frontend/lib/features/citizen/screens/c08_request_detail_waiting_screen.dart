@@ -1,10 +1,18 @@
+import '../../../core/data/request_presentation.dart';
+
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/request_review_panel.dart';
+import 'c02_request_wizard_step1_screen.dart';
+import '../../../core/data/relief_repository.dart';
+import '../../../core/data/request_draft.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/status_chip.dart';
-import 'c10_track_rescue_screen.dart';
 
 class C08RequestDetailWaitingScreen extends StatefulWidget {
   final String requestId;
@@ -25,157 +33,134 @@ class C08RequestDetailWaitingScreen extends StatefulWidget {
   });
 
   @override
-  State<C08RequestDetailWaitingScreen> createState() => _C08RequestDetailWaitingScreenState();
+  State<C08RequestDetailWaitingScreen> createState() =>
+      _C08RequestDetailWaitingScreenState();
 }
 
-class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingScreen> {
-  late ReliefStatus _currentStatus;
-
+class _C08RequestDetailWaitingScreenState
+    extends State<C08RequestDetailWaitingScreen> {
+  ReliefStatus _currentStatus = ReliefStatus.pending;
+  Json? _request;
+  String? _error;
   @override
   void initState() {
     super.initState();
-    _currentStatus = widget.initialStatus;
+    _reload();
   }
 
-  void _showCancelDialog() {
-    String cancelReason = 'Gia đình đã tự di chuyển an toàn sang nhà hàng xóm';
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Xác nhận hủy yêu cầu', style: AppTypography.cardTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bạn chắc chắn muốn hủy yêu cầu cứu trợ ${widget.requestId}? Vui lòng chọn lý do để nhường lượt cho các hộ khác đang nguy kịch:',
-                style: AppTypography.body,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: cancelReason,
-                isExpanded: true,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.canvas,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Gia đình đã tự di chuyển an toàn sang nhà hàng xóm',
-                    child: Text('Đã tự di chuyển an toàn', overflow: TextOverflow.ellipsis),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Đã nhận được trợ giúp từ đội ứng cứu địa phương',
-                    child: Text('Đã nhận hỗ trợ tại chỗ', overflow: TextOverflow.ellipsis),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Nước lũ đã rút, không còn nguy hiểm',
-                    child: Text('Nước lũ đã rút', overflow: TextOverflow.ellipsis),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Nhầm lẫn thông tin',
-                    child: Text('Gửi nhầm thông tin', overflow: TextOverflow.ellipsis),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setDialogState(() => cancelReason = val);
-                  }
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('Quay lại', style: AppTypography.button.copyWith(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.danger,
-                foregroundColor: AppColors.onDanger,
-              ),
-              onPressed: () {
-                Navigator.of(dialogCtx).pop();
-                setState(() => _currentStatus = ReliefStatus.cancelled);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã hủy yêu cầu cứu trợ thành công.')),
-                );
-              },
-              child: const Text('Xác nhận hủy'),
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _reload() async {
+    try {
+      final value = await reliefRepository.detail(widget.requestId);
+      if (!mounted) return;
+      setState(() {
+        _request = value;
+        _error = null;
+        _currentStatus = stageStatus(value['stage']);
+      });
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
   }
 
-  void _showFeedbackDialog() {
-    int rating = 5;
-    showDialog(
+  Future<void> _showCancelDialog() async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, setModalState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Đánh giá chất lượng hỗ trợ', style: AppTypography.cardTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Bạn đánh giá thế nào về sự hỗ trợ của đội cứu hộ?', style: AppTypography.body),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < rating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 32,
-                    ),
-                    onPressed: () => setModalState(() => rating = index + 1),
-                  );
-                }),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('Đóng', style: AppTypography.button.copyWith(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-              onPressed: () {
-                Navigator.of(dialogCtx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cảm ơn bạn đã gửi đánh giá!')),
-                );
-              },
-              child: const Text('Gửi đánh giá'),
-            ),
-          ],
+      builder: (ctx) => AlertDialog(
+        title: Text('Xác nhận hủy yêu cầu', style: AppTypography.cardTitle),
+        content: const Text(
+          'Hủy yêu cầu cứu trợ này? Bạn chỉ có thể hủy khi chưa có đội tiếp nhận. Hãy chờ xác nhận kết quả trước khi gửi yêu cầu mới.',
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Quay lại'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xác nhận hủy'),
+          ),
+        ],
       ),
     );
+    if (confirmed != true || _request == null) return;
+    try {
+      final result = await reliefRepository.cancel(_request!);
+      if (!mounted) return;
+      showFailure(
+        context,
+        result['pending'] == true
+            ? 'Đang chờ xác nhận hủy. Bạn chưa thể gửi yêu cầu mới.'
+            : 'Đã hủy yêu cầu.',
+      );
+      await _reload();
+    } catch (error) {
+      if (mounted) showFailure(context, error);
+      await _reload();
+    }
+  }
+
+  Future<void> _edit() async {
+    if (_request == null) return;
+    try {
+      final latest = await reliefRepository.detail(widget.requestId);
+      if (!mounted) return;
+      if (latest['cached'] == true || latest['stage'] != 'waiting') {
+        throw 'Hãy tải lại yêu cầu. Bạn chỉ có thể sửa khi chưa có đội tiếp nhận.';
+      }
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => C02RequestWizardStep1Screen(
+            draft: RequestDraft.fromRequest(latest),
+          ),
+        ),
+      );
+      await _reload();
+    } catch (error) {
+      if (mounted) showFailure(context, error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final request = _request;
+    if (request == null) {
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppHeader(
+          title: 'Chi tiết yêu cầu',
+          actions: [
+            IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
+          ],
+        ),
+        body: Center(
+          child: _error == null
+              ? const CircularProgressIndicator()
+              : Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(_error!),
+                ),
+        ),
+      );
+    }
+    final values = Map<String, dynamic>.from(request['data']);
+    final citizen = reliefRepository.account?['role'] == 'citizen';
     final isCompleted = _currentStatus == ReliefStatus.completed;
     final isCancelled = _currentStatus == ReliefStatus.cancelled;
-    final isWaiting = _currentStatus == ReliefStatus.pending || _currentStatus == ReliefStatus.waiting;
-    final isInProgress = _currentStatus == ReliefStatus.inTransit || _currentStatus == ReliefStatus.inProgress || _currentStatus == ReliefStatus.assigned;
+    final isWaiting =
+        _currentStatus == ReliefStatus.pending ||
+        _currentStatus == ReliefStatus.waiting;
+    final isInProgress =
+        _currentStatus == ReliefStatus.inTransit ||
+        _currentStatus == ReliefStatus.inProgress ||
+        _currentStatus == ReliefStatus.assigned;
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Chi tiết yêu cầu ${widget.requestId}',
+        title: 'Chi tiết yêu cầu ${shortRequestId(widget.requestId)}',
+        actions: [
+          IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
+        ],
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -200,18 +185,28 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                     Row(
                       children: [
                         Expanded(
-                          child: Text('Mã: ${widget.requestId}', style: AppTypography.cardTitle),
+                          child: Text(
+                            'Mã: ${shortRequestId(widget.requestId)}',
+                            style: AppTypography.cardTitle,
+                          ),
                         ),
                         StatusChip(status: _currentStatus),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text('Gửi lúc: 18:20, 23/10/2026', style: AppTypography.secondary),
+                    Text(
+                      'Tiếp nhận lúc: ${formatTimestamp(request['receivedAt'], seconds: true)}',
+                      style: AppTypography.secondary,
+                    ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.urgency ?? (isCompleted ? 'Trạng thái: Đã đưa về nơi an toàn' : 'Mức độ: Cực kỳ khẩn cấp'),
+                      'Mức độ: ${values['urgency']}',
                       style: AppTypography.secondaryMedium.copyWith(
-                        color: isCompleted ? AppColors.success : (isCancelled ? AppColors.textMuted : AppColors.danger),
+                        color: isCompleted
+                            ? AppColors.success
+                            : (isCancelled
+                                  ? AppColors.textMuted
+                                  : AppColors.danger),
                       ),
                     ),
                   ],
@@ -220,28 +215,41 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
               const SizedBox(height: 20),
 
               // Completed Notice Banner (If Completed)
-              if (isCompleted) ...[
+              if (!citizen)
+                const SizedBox.shrink()
+              else if (isCompleted) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.successContainer,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.success.withOpacity(0.4)),
+                    border: Border.all(
+                      color: AppColors.success.withOpacity(0.4),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.verified, color: AppColors.success, size: 26),
+                      const Icon(
+                        Icons.verified,
+                        color: AppColors.success,
+                        size: 26,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Hỗ trợ thành công', style: AppTypography.cardTitle.copyWith(color: AppColors.success)),
+                            Text(
+                              'Hỗ trợ thành công',
+                              style: AppTypography.cardTitle.copyWith(
+                                color: AppColors.success,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
-                              'Đội cứu hộ đã hoàn thành nhiệm vụ và bàn giao an toàn. Yêu cầu đã được lưu trữ vào hệ thống lưu trữ cứu trợ và không thể hủy.',
+                              'Yêu cầu đã hoàn thành. Bạn có thể xem lại nội dung và lịch sử xử lý.',
                               style: AppTypography.secondary,
                             ),
                           ],
@@ -267,37 +275,39 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                   children: [
                     _buildTimelineStep(
                       title: 'Đã gửi yêu cầu',
-                      subtitle: 'Hệ thống đã nhận đơn vào cơ sở dữ liệu cứu trợ',
-                      time: '18:20',
+                      subtitle: 'Yêu cầu đã được tiếp nhận',
+                      time: formatTimestamp(request['receivedAt']),
                       isCompleted: true,
                       isCurrent: false,
                     ),
                     _buildTimelineStep(
-                      title: 'Điều phối & Tiếp nhận',
+                      title: 'Đội cứu hộ tiếp nhận',
                       subtitle: isCancelled
-                          ? 'Yêu cầu đã được chủ động hủy'
+                          ? 'Bạn đã hủy yêu cầu'
                           : (isCompleted
-                              ? 'Đội Cứu trợ Hương Thủy đã tiếp nhận'
-                              : (isInProgress ? 'Đội Hương Thủy đang phụ trách' : 'Đang tìm đội cứu trợ gần nhất trong bán kính 5km')),
-                      time: '18:22',
+                                ? 'Yêu cầu đã được đội tiếp nhận'
+                                : (isInProgress
+                                      ? 'Đã có đội phụ trách'
+                                      : 'Đang chờ đội tiếp nhận')),
+                      time: '--:--',
                       isCompleted: isCompleted || isInProgress || isCancelled,
                       isCurrent: isWaiting,
                     ),
                     _buildTimelineStep(
                       title: 'Đội cứu hộ tiếp cận',
                       subtitle: isCompleted
-                          ? 'Đã tiếp cận vị trí hộ gia đình an toàn'
-                          : (isInProgress ? 'Đội cứu hộ đang di chuyển trên đường' : 'Chờ đội xuất phát'),
-                      time: isCompleted ? '18:45' : (isInProgress ? '18:30' : '--:--'),
+                          ? 'Yêu cầu đã hoàn thành'
+                          : (isInProgress
+                                ? 'Chưa có cập nhật thời điểm đến nơi'
+                                : 'Chờ đội tiếp nhận'),
+                      time: '--:--',
                       isCompleted: isCompleted,
                       isCurrent: isInProgress,
                     ),
                     _buildTimelineStep(
                       title: 'Hoàn thành hỗ trợ',
-                      subtitle: isCompleted
-                          ? 'Đã sơ tán an toàn về điểm tránh trú THPT Chương Mỹ A'
-                          : 'Bàn giao nhu yếu phẩm hoặc đưa người về nơi an toàn',
-                      time: isCompleted ? '19:10' : '--:--',
+                      subtitle: isCompleted ? 'Đã ghi nhận hoàn thành hỗ trợ' : 'Bàn giao nhu yếu phẩm hoặc đưa người về nơi an toàn',
+                      time: '--:--',
                       isCompleted: isCompleted,
                       isCurrent: false,
                       isLast: true,
@@ -321,24 +331,39 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoItem('Nhu cầu:', widget.title ?? 'Sơ tán khẩn cấp, Lương thực & Nước uống'),
-                    _buildInfoItem('Số người:', '${widget.people ?? 4} người (người già, trẻ nhỏ)'),
-                    _buildInfoItem('Địa chỉ:', widget.address ?? 'Số 42, Thôn Nam Hài, Xã Nam Phương Tiến, Huyện Chương Mỹ'),
-                    _buildInfoItem('Mốc nhận dạng:', 'Nhà cấp 4 màu xanh gần đình làng, nước dâng ngập cổng'),
-                    _buildInfoItem('Tọa độ GPS:', '20.8841° N, 105.6215° E (Độ chính xác: ±8m)'),
-                    _buildInfoItem('Người liên hệ:', 'Nguyễn Văn An - 0912 345 678'),
+                    _buildInfoItem(
+                      'Nhu cầu:',
+                      (values['types'] as List).join(', '),
+                    ),
+                    _buildInfoItem('Số người:', '${values['people']} người'),
+                    _buildInfoItem('Địa chỉ:', values['address']),
+                    _buildInfoItem('Mốc nhận diện:', values['landmark']),
+                    _buildInfoItem(
+                      'Tọa độ đã xác nhận:',
+                      '${values['latitude']}, ${values['longitude']}',
+                    ),
+                    _buildInfoItem(
+                      'Người liên hệ:',
+                      '${request['contact']['name']} - ${request['contact']['phone']}',
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
+              RequestReviewPanel(request: request, reload: _reload),
               // Context-sensitive Actions
-              if (isCompleted) ...[
+              if (!citizen)
+                const SizedBox.shrink()
+              else if (isCompleted) ...[
                 // When Completed: NEVER show Cancel button! Show feedback and home actions
                 AppButton(
                   text: 'Đánh giá chất lượng hỗ trợ',
                   icon: Icons.star_rate,
-                  onPressed: _showFeedbackDialog,
+                  onPressed: () => showFailure(
+                    context,
+                    'Chức năng đánh giá chưa khả dụng. Chưa gửi phản hồi.',
+                  ),
                 ),
                 const SizedBox(height: 10),
                 AppButton(
@@ -351,13 +376,10 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                 AppButton(
                   text: 'Theo dõi vị trí đội cứu hộ',
                   icon: Icons.map,
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => C10TrackRescueScreen(requestId: widget.requestId),
-                      ),
-                    );
-                  },
+                  onPressed: () => showFailure(
+                    context,
+                    'Chức năng theo dõi vị trí đội cứu hộ chưa khả dụng.',
+                  ),
                 ),
                 const SizedBox(height: 10),
                 AppButton(
@@ -366,11 +388,19 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                   icon: Icons.phone,
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đang kết nối tới Đội trưởng Đội Hương Thủy (0983 234 567)...')),
+                      const SnackBar(
+                        content: Text('Chưa có thông tin liên hệ đội cứu hộ.'),
+                      ),
                     );
                   },
                 ),
               ] else if (isWaiting) ...[
+                AppButton(
+                  text: 'Chỉnh sửa yêu cầu',
+                  icon: Icons.edit_outlined,
+                  onPressed: _edit,
+                ),
+                const SizedBox(height: 10),
                 // ONLY when waiting / pending can citizen cancel the request!
                 AppButton(
                   text: 'Hủy yêu cầu cứu trợ này',
@@ -388,8 +418,10 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                   ),
                   child: Center(
                     child: Text(
-                      'Yêu cầu này đã được hủy thành công.',
-                      style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      'Yêu cầu đã được hủy.',
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -444,8 +476,13 @@ class _C08RequestDetailWaitingScreenState extends State<C08RequestDetailWaitingS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(title, style: AppTypography.bodyMedium)),
-                    Text(time, style: AppTypography.secondary.copyWith(fontSize: 14)),
+                    Expanded(
+                      child: Text(title, style: AppTypography.bodyMedium),
+                    ),
+                    Text(
+                      time,
+                      style: AppTypography.secondary.copyWith(fontSize: 14),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),

@@ -1,4 +1,11 @@
+import '../../../core/data/request_presentation.dart';
+
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/data/request_draft.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -17,41 +24,31 @@ class C07MyRequestsScreen extends StatefulWidget {
 class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
   int _selectedFilter = 0; // 0: Tất cả, 1: Đang chờ/xử lý, 2: Đã hoàn thành
 
-  final List<Map<String, dynamic>> _allRequests = [
-    {
-      'id': 'CR-0247',
-      'title': 'Sơ tán khẩn cấp & Lương thực',
-      'address': 'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
-      'people': 4,
-      'time': '18:20, 23/10/2026',
-      'status': RequestStatus.waiting,
-      'urgency': 'Cực kỳ khẩn cấp',
-    },
-    {
-      'id': 'CR-0189',
-      'title': 'Nước uống đóng chai & Lương khô',
-      'address': 'Thôn Nhân Lý, Nam Phương Tiến, Chương Mỹ',
-      'people': 2,
-      'time': '15:45, 22/10/2026',
-      'status': RequestStatus.completed,
-      'urgency': 'Cần hỗ trợ',
-    },
-    {
-      'id': 'CR-0102',
-      'title': 'Hỗ trợ y tế & Thuốc cảm, hạ sốt',
-      'address': 'Xã Tân Tiến, Chương Mỹ, Hà Nội',
-      'people': 3,
-      'time': '09:30, 20/10/2026',
-      'status': RequestStatus.completed,
-      'urgency': 'Cần hỗ trợ',
-    },
-  ];
+  List<Json> get _allRequests =>
+      reliefRepository.items.map(requestCard).toList();
+  @override
+  void initState() {
+    super.initState();
+    reliefRepository.addListener(_changed);
+    reliefRepository.refresh();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    reliefRepository.removeListener(_changed);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final filtered = _allRequests.where((req) {
       if (_selectedFilter == 1) {
-        return req['status'] == RequestStatus.waiting || req['status'] == RequestStatus.inProgress;
+        return req['status'] == RequestStatus.waiting ||
+            req['status'] == RequestStatus.assigned;
       } else if (_selectedFilter == 2) {
         return req['status'] == RequestStatus.completed;
       }
@@ -60,10 +57,7 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: const AppHeader(
-        title: 'Yêu cầu của tôi',
-        showBackButton: false,
-      ),
+      appBar: const AppHeader(title: 'Yêu cầu của tôi', showBackButton: false),
       body: SafeArea(
         child: Column(
           children: [
@@ -79,15 +73,23 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
                   children: [
                     _buildFilterTab(0, 'Tất cả (${_allRequests.length})'),
                     const SizedBox(width: 8),
-                    _buildFilterTab(1, 'Đang xử lý (1)'),
+                    _buildFilterTab(
+                      1,
+                      'Đang xử lý (${_allRequests.where((r) => [RequestStatus.waiting, RequestStatus.assigned].contains(r['status'])).length})',
+                    ),
                     const SizedBox(width: 8),
-                    _buildFilterTab(2, 'Đã xong (2)'),
+                    _buildFilterTab(
+                      2,
+                      'Đã xong (${_allRequests.where((r) => r['status'] == RequestStatus.completed).length})',
+                    ),
                   ],
                 ),
               ),
             ),
             const Divider(height: 1, color: AppColors.borderSubtle),
 
+            const SyncStatus(),
+            if (reliefRepository.loading) const LinearProgressIndicator(),
             // Request List
             Expanded(
               child: filtered.isEmpty
@@ -95,9 +97,16 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.inbox_outlined, size: 48, color: AppColors.textMuted),
+                          const Icon(
+                            Icons.inbox_outlined,
+                            size: 48,
+                            color: AppColors.textMuted,
+                          ),
                           const SizedBox(height: 12),
-                          Text('Không có yêu cầu nào trong mục này.', style: AppTypography.body),
+                          Text(
+                            'Không có yêu cầu nào trong mục này.',
+                            style: AppTypography.body,
+                          ),
                         ],
                       ),
                     )
@@ -112,6 +121,15 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
                     ),
             ),
 
+            if (reliefRepository.nextCursor != null)
+              TextButton(
+                onPressed: () => reliefRepository.refresh(more: true),
+                child: const Text('Xem thêm'),
+              ),
+            TextButton(
+              onPressed: () => reliefRepository.refresh(),
+              child: const Text('Tải lại danh sách'),
+            ),
             // Bottom CTA to create new request
             Container(
               padding: const EdgeInsets.all(16),
@@ -120,7 +138,7 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
                 border: Border(top: BorderSide(color: AppColors.borderSubtle)),
               ),
               child: AppButton(
-                text: 'Tạo yêu cầu cứu trợ mới',
+                text: 'Tạo yêu cầu cứu trợ',
                 icon: Icons.add,
                 onPressed: _tryCreateNewRequest,
               ),
@@ -132,8 +150,21 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
   }
 
   void _tryCreateNewRequest() {
+    if (!reliefRepository.signedIn) {
+      showFailure(context, 'Đăng nhập để gửi yêu cầu.');
+      return;
+    }
+    if (reliefRepository.operations.any((o) => o['kind'] != 'evidence')) {
+      showFailure(
+        context,
+        'Còn thao tác chờ xác nhận. Hãy xem trạng thái gửi trước.',
+      );
+      return;
+    }
     final activeReq = _allRequests.firstWhere(
-      (req) => req['status'] == RequestStatus.waiting || req['status'] == RequestStatus.inProgress,
+      (req) =>
+          req['status'] == RequestStatus.waiting ||
+          req['status'] == RequestStatus.assigned,
       orElse: () => <String, dynamic>{},
     );
 
@@ -142,13 +173,22 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
         context: context,
         builder: (dialogCtx) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 28),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.warning,
+                size: 28,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Không thể tạo thêm yêu cầu', style: AppTypography.cardTitle),
+                child: Text(
+                  'Không thể tạo thêm yêu cầu',
+                  style: AppTypography.cardTitle,
+                ),
               ),
             ],
           ),
@@ -157,12 +197,14 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bạn đang có yêu cầu cứu hộ [${activeReq['id']}] chưa hoàn tất (${activeReq['status'] == RequestStatus.waiting ? 'Đang chờ tiếp nhận' : 'Đang xử lý'}).',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
+                'Bạn đang có yêu cầu cứu trợ [${activeReq['id']}] chưa hoàn tất (${activeReq['status'] == RequestStatus.waiting ? 'Đang chờ tiếp nhận' : 'Đang xử lý'}).',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.primaryDark,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Theo quy định điều phối, bạn chỉ có thể tạo yêu cầu mới sau khi đội cứu hộ đã hoàn thành nhiệm vụ và có xác nhận hoàn tất, nhằm tránh quá tải và gửi trùng lặp.',
+                'Mỗi tài khoản có một yêu cầu đang mở. Bạn có thể gửi mới sau khi yêu cầu hiện tại hoàn thành hoặc được xác nhận hủy. Khi chưa có đội tiếp nhận, bạn có thể sửa nội dung đã gửi.',
                 style: AppTypography.secondary,
               ),
             ],
@@ -192,7 +234,7 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
                   ),
                 );
               },
-              child: Text('Xem đơn ${activeReq['id']}'),
+              child: const Text('Xem yêu cầu hiện tại'),
             ),
           ],
         ),
@@ -201,9 +243,7 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
     }
 
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const C02RequestWizardStep1Screen(),
-      ),
+      MaterialPageRoute(builder: (_) => const C02RequestWizardStep1Screen()),
     );
   }
 
@@ -255,10 +295,18 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Text(item['id'] as String, style: AppTypography.cardTitle.copyWith(color: AppColors.primary)),
+                Text(
+                  shortRequestId(item['id']),
+                  style: AppTypography.cardTitle.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
                 StatusChip(status: item['status'] as RequestStatus),
               ],
             ),
@@ -267,7 +315,11 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -280,11 +332,20 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                Text('${item['people']} người cần trợ giúp', style: AppTypography.secondaryMedium),
-                Text(item['time'] as String, style: AppTypography.secondary.copyWith(fontSize: 14)),
+                Text(
+                  '${item['people']} người cần trợ giúp',
+                  style: AppTypography.secondaryMedium,
+                ),
+                Text(
+                  item['time'] as String,
+                  style: AppTypography.secondary.copyWith(fontSize: 14),
+                ),
               ],
             ),
           ],

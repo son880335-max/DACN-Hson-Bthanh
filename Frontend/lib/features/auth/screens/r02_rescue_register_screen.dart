@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/widgets/sync_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import 'a04_otp_verification_screen.dart';
 
 class R02RescueRegisterScreen extends StatefulWidget {
   const R02RescueRegisterScreen({super.key});
 
   @override
-  State<R02RescueRegisterScreen> createState() => _R02RescueRegisterScreenState();
+  State<R02RescueRegisterScreen> createState() =>
+      _R02RescueRegisterScreenState();
 }
 
 class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
@@ -17,8 +20,12 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
   final _leaderNameController = TextEditingController();
   final _leaderIdCardController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _areaController = TextEditingController(text: 'Huyện Chương Mỹ, TP. Hà Nội');
-  final _equipmentController = TextEditingController(text: '02 Thuyền vỏ nhôm gắn máy 25HP, 12 Áo phao đạt chuẩn QCVN, 02 Túi y tế chống nước');
+  final _areaController = TextEditingController(
+    text: 'Huyện Chương Mỹ, TP. Hà Nội',
+  );
+  final _equipmentController = TextEditingController(
+    text: '02 Thuyền vỏ nhôm gắn máy 25HP, 12 Áo phao đạt chuẩn QCVN, 02 Túi y tế chống nước',
+  );
   final _boatRegController = TextEditingController(text: 'VN-24-HNI-0889');
   int _membersCount = 4;
   bool _agreedToRegulations = false;
@@ -26,22 +33,22 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
   final List<Map<String, String>> _proofDocuments = [
     {
       'title': 'Giấy đăng kiểm phương tiện thủy nội địa (ĐK-2025/HN)',
-      'law': 'Điều 24, 26 Luật Giao thông đường thủy nội địa',
+      'law': 'Giấy tờ minh họa, chưa được xác minh',
       'file': 'Giay_dang_kiem_phuong_tien_thuy.pdf',
     },
     {
       'title': 'Chứng chỉ chuyên môn lái ca-nô/xuồng máy hạng 2',
-      'law': 'Điều 35 Luật Giao thông đường thủy nội địa',
+      'law': 'Giấy tờ minh họa, chưa được xác minh',
       'file': 'Chung_chi_lai_phuong_tien_thuy_hang_2.jpg',
     },
     {
       'title': 'Chứng chỉ tập huấn Sơ cấp cứu ban đầu (Chữ thập đỏ)',
-      'law': 'Luật Hoạt động Chữ thập đỏ & Nghiệp vụ cứu hộ',
+      'law': 'Giấy tờ minh họa, chưa được xác minh',
       'file': 'Chung_chi_so_cap_cuu_chu_thap_do.pdf',
     },
     {
       'title': 'Bản cam kết tuân thủ điều phối PCTT&TKCN địa phương',
-      'law': 'Nghị định 93/2021/NĐ-CP & Luật Phòng chống thiên tai',
+      'law': 'Giấy tờ minh họa, chưa được xác minh',
       'file': 'Ban_cam_ket_dieu_phoi_cuu_tro_pctt.pdf',
     },
   ];
@@ -51,7 +58,9 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -59,7 +68,12 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
           ),
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + MediaQuery.of(ctx).viewPadding.bottom),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              24 + MediaQuery.of(ctx).viewPadding.bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,9 +89,15 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text('Chọn loại tệp minh chứng đính kèm', style: AppTypography.cardTitle),
+                Text(
+                  'Chọn loại tệp minh chứng đính kèm',
+                  style: AppTypography.cardTitle,
+                ),
                 const SizedBox(height: 6),
-                Text('Theo quy định pháp luật Việt Nam về cứu nạn mùa lũ:', style: AppTypography.secondary),
+                Text(
+                  'Các loại giấy tờ trong hồ sơ minh họa:',
+                  style: AppTypography.secondary,
+                ),
                 const SizedBox(height: 12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -87,13 +107,27 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       color: AppColors.dangerContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.picture_as_pdf, color: AppColors.danger, size: 22),
+                    child: const Icon(
+                      Icons.picture_as_pdf,
+                      color: AppColors.danger,
+                      size: 22,
+                    ),
                   ),
-                  title: Text('Giấy đăng ký / Đăng kiểm phương tiện', style: AppTypography.bodyMedium),
-                  subtitle: Text('Căn cứ Điều 24, 26 Luật GT Đường thủy', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                  title: Text(
+                    'Giấy đăng ký / Đăng kiểm phương tiện',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'Căn cứ Điều 24, 26 Luật GT Đường thủy',
+                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    _attachDoc('Giấy đăng kiểm phương tiện thủy', 'Luật GTĐTNĐ', 'Dang_kiem_bo_sung.pdf');
+                    _attachDoc(
+                      'Giấy đăng kiểm phương tiện thủy',
+                      'Giấy tờ minh họa, chưa được xác minh',
+                      'Dang_kiem_bo_sung.pdf',
+                    );
                   },
                 ),
                 const Divider(height: 1, color: AppColors.borderSubtle),
@@ -105,13 +139,27 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       color: AppColors.primaryContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.badge_outlined, color: AppColors.primaryDark, size: 22),
+                    child: const Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.primaryDark,
+                      size: 22,
+                    ),
                   ),
-                  title: Text('Bằng thuyền trưởng / Lái ca-nô', style: AppTypography.bodyMedium),
-                  subtitle: Text('Cục Đường thủy hoặc Sở GTVT cấp', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                  title: Text(
+                    'Bằng thuyền trưởng / Lái ca-nô',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'Cục Đường thủy hoặc Sở GTVT cấp',
+                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    _attachDoc('Bằng lái ca-nô/xuồng máy', 'Điều 35 Luật GTĐTNĐ', 'Bang_lai_bo_sung.jpg');
+                    _attachDoc(
+                      'Bằng lái ca-nô/xuồng máy',
+                      'Giấy tờ minh họa, chưa được xác minh',
+                      'Bang_lai_bo_sung.jpg',
+                    );
                   },
                 ),
                 const Divider(height: 1, color: AppColors.borderSubtle),
@@ -123,13 +171,27 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       color: AppColors.successContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.health_and_safety_outlined, color: AppColors.success, size: 22),
+                    child: const Icon(
+                      Icons.health_and_safety_outlined,
+                      color: AppColors.success,
+                      size: 22,
+                    ),
                   ),
-                  title: Text('Chứng chỉ Sơ cấp cứu / Cứu đuối nước', style: AppTypography.bodyMedium),
-                  subtitle: Text('Hội Chữ thập đỏ hoặc cơ sở y tế cấp', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                  title: Text(
+                    'Chứng chỉ Sơ cấp cứu / Cứu đuối nước',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'Hội Chữ thập đỏ hoặc cơ sở y tế cấp',
+                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    _attachDoc('Chứng chỉ sơ cấp cứu', 'Hội Chữ thập đỏ', 'So_cap_cuu_bo_sung.pdf');
+                    _attachDoc(
+                      'Chứng chỉ sơ cấp cứu',
+                      'Hội Chữ thập đỏ',
+                      'So_cap_cuu_bo_sung.pdf',
+                    );
                   },
                 ),
                 const Divider(height: 1, color: AppColors.borderSubtle),
@@ -141,13 +203,27 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       color: AppColors.warningContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.camera_alt_outlined, color: AppColors.warning, size: 22),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppColors.warning,
+                      size: 22,
+                    ),
                   ),
-                  title: Text('Ảnh thực tế phương tiện & Áo phao QCVN', style: AppTypography.bodyMedium),
-                  subtitle: Text('Tối thiểu 100% áo phao đủ cho người trên xuồng', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                  title: Text(
+                    'Ảnh thực tế phương tiện & Áo phao QCVN',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  subtitle: Text(
+                    'Tối thiểu 100% áo phao đủ cho người trên xuồng',
+                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                  ),
                   onTap: () {
                     Navigator.of(ctx).pop();
-                    _attachDoc('Ảnh thực tế xuồng máy & áo phao', 'QCVN 08:2015/BKHCN', 'Anh_thuc_te_phuong_tien.jpg');
+                    _attachDoc(
+                      'Ảnh thực tế xuồng máy & áo phao',
+                      'QCVN 08:2015/BKHCN',
+                      'Anh_thuc_te_phuong_tien.jpg',
+                    );
                   },
                 ),
               ],
@@ -160,15 +236,11 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
 
   void _attachDoc(String title, String law, String file) {
     setState(() {
-      _proofDocuments.add({
-        'title': title,
-        'law': law,
-        'file': file,
-      });
+      _proofDocuments.add({'title': title, 'law': law, 'file': file});
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Đã tải lên tệp minh chứng: $file')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Đã chọn tài liệu minh họa: $file')));
   }
 
   void _removeProofDocument(int index) {
@@ -177,46 +249,22 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
     });
   }
 
-  void _proceedToOtp() {
-    if (_teamNameController.text.trim().isEmpty ||
-        _leaderNameController.text.trim().isEmpty ||
-        _leaderIdCardController.text.trim().isEmpty ||
-        _phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng điền đầy đủ tên đội, họ tên đội trưởng, số CCCD và số điện thoại.')),
+  Future<void> _proceedToOtp() async {
+    try {
+      await reliefRepository.api.json(
+        'POST',
+        '/auth/register',
+        body: {'phone': _phoneController.text.trim()},
       );
-      return;
+      if (mounted) {
+        showFailure(
+          context,
+          'Hiện chưa thể đăng ký đội cứu hộ. Hồ sơ chưa được gửi.',
+        );
+      }
+    } catch (error) {
+      if (mounted) showFailure(context, error);
     }
-
-    if (_proofDocuments.length < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.danger,
-          content: Text('Bắt buộc phải cung cấp đủ Giấy đăng kiểm phương tiện và Chứng chỉ chuyên môn lái ca-nô theo luật.'),
-        ),
-      );
-      return;
-    }
-
-    if (!_agreedToRegulations) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: AppColors.danger,
-          content: Text('Bạn cần đọc và đồng ý cam kết tuân thủ quy định pháp luật & điều phối cứu hộ.'),
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => A04OtpVerificationScreen(
-          phoneNumber: _phoneController.text.trim(),
-          userRole: 'rescue',
-          nextAction: 'register',
-        ),
-      ),
-    );
   }
 
   @override
@@ -224,7 +272,7 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Đăng ký Đội cứu hộ',
+        title: 'Đăng ký đội cứu hộ',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -242,17 +290,26 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.5),
+                    ),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.gavel_outlined, color: AppColors.primaryDark, size: 24),
+                      const Icon(
+                        Icons.gavel_outlined,
+                        color: AppColors.primaryDark,
+                        size: 24,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Căn cứ Luật Phòng, chống thiên tai, Luật Giao thông đường thủy nội địa và Nghị định 93/2021/NĐ-CP: Mọi đội cứu hộ dân sự/tình nguyện khi tham gia ứng cứu lũ lụt bắt buộc phải có đầy đủ chứng chỉ chuyên môn, đăng kiểm phương tiện và cam kết chấp hành sự điều phối của Ban Chỉ huy PCTT&TKCN.',
-                          style: AppTypography.secondary.copyWith(fontSize: 12, height: 1.4),
+                          'Khai thông tin đội, thành viên và phương tiện. Chuẩn bị giấy tờ theo danh sách dưới đây để quản trị viên kiểm tra.',
+                          style: AppTypography.secondary.copyWith(
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],
@@ -271,10 +328,16 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('1. Thông tin Đội cứu hộ & Người đại diện', style: AppTypography.cardTitle),
+                      Text(
+                        '1. Thông tin đội cứu hộ',
+                        style: AppTypography.cardTitle,
+                      ),
                       const SizedBox(height: 14),
 
-                      Text('Tên Đội cứu hộ', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Tên đội cứu hộ',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _teamNameController,
@@ -286,7 +349,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Họ và tên Đội trưởng (Người đại diện pháp lý)', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Họ và tên người đại diện',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _leaderNameController,
@@ -298,7 +364,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Số CCCD / Mã định danh VNeID của Đội trưởng', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Số căn cước của người đại diện',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _leaderIdCardController,
@@ -311,7 +380,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Số điện thoại trực ban / Hotline đội', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Số điện thoại liên hệ của đội',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _phoneController,
@@ -324,7 +396,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Địa bàn đăng ký thường trực cứu trợ', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Địa bàn hoạt động',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _areaController,
@@ -335,21 +410,37 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Số lượng thành viên trực tiếp ứng cứu', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Số thành viên tham gia cứu hộ',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: AppColors.primary),
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: AppColors.primary,
+                            ),
                             onPressed: () {
-                              if (_membersCount > 2) setState(() => _membersCount--);
+                              if (_membersCount > 2) {
+                                setState(() => _membersCount--);
+                              }
                             },
                           ),
-                          Text('$_membersCount thành viên', style: AppTypography.cardTitle),
+                          Text(
+                            '$_membersCount thành viên',
+                            style: AppTypography.cardTitle,
+                          ),
                           IconButton(
-                            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                            icon: const Icon(
+                              Icons.add_circle_outline,
+                              color: AppColors.primary,
+                            ),
                             onPressed: () {
-                              if (_membersCount < 50) setState(() => _membersCount++);
+                              if (_membersCount < 50) {
+                                setState(() => _membersCount++);
+                              }
                             },
                           ),
                         ],
@@ -365,28 +456,40 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.5),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 24),
+                          const Icon(
+                            Icons.verified_user_outlined,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text('2. Hồ sơ minh chứng pháp lý & Phương tiện', style: AppTypography.cardTitle),
+                            child: Text(
+                              '2. Phương tiện và giấy tờ',
+                              style: AppTypography.cardTitle,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Hồ sơ được dùng để Ban Chỉ huy PCTT&TKCN và Quản trị viên đối soát, đảm bảo an toàn tuyệt đối tính mạng người dân và thành viên cứu trợ.',
+                        'Hồ sơ giúp quản trị viên kiểm tra năng lực và phương tiện của đội trước khi xét duyệt.',
                         style: AppTypography.secondary,
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Phương tiện thủy & Biển số đăng ký', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Phương tiện và biển số đăng ký',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _boatRegController,
@@ -398,7 +501,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Trang thiết bị an toàn trên phương tiện', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Trang thiết bị an toàn trên phương tiện',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _equipmentController,
@@ -410,7 +516,10 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      Text('Danh sách tài liệu minh chứng đã tải lên (${_proofDocuments.length})', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Tài liệu đã chọn (${_proofDocuments.length})',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 8),
 
                       ..._proofDocuments.asMap().entries.map((entry) {
@@ -427,22 +536,47 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.assignment_turned_in_outlined, color: AppColors.primary, size: 22),
+                              const Icon(
+                                Icons.assignment_turned_in_outlined,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(doc['title']!, style: AppTypography.bodyMedium.copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      doc['title']!,
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text('Căn cứ: ${doc['law']}', style: AppTypography.secondary.copyWith(fontSize: 12, color: AppColors.primaryDark)),
+                                    Text(
+                                      'Ghi chú: ${doc['law']}',
+                                      style: AppTypography.secondary.copyWith(
+                                        fontSize: 12,
+                                        color: AppColors.primaryDark,
+                                      ),
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text('Tệp đính kèm: ${doc['file']}', style: AppTypography.secondary.copyWith(fontSize: 11)),
+                                    Text(
+                                      'Tệp đính kèm: ${doc['file']}',
+                                      style: AppTypography.secondary.copyWith(
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.close, color: AppColors.danger, size: 20),
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: AppColors.danger,
+                                  size: 20,
+                                ),
                                 onPressed: () => _removeProofDocument(idx),
                               ),
                             ],
@@ -458,7 +592,7 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                           minimumSize: const Size(double.infinity, 48),
                         ),
                         icon: const Icon(Icons.upload_file),
-                        label: const Text('Tải thêm tệp minh chứng theo quy định'),
+                        label: const Text('Chọn tài liệu minh họa'),
                         onPressed: _addProofDocument,
                       ),
                     ],
@@ -480,12 +614,16 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                       Checkbox(
                         value: _agreedToRegulations,
                         activeColor: AppColors.primary,
-                        onChanged: (val) => setState(() => _agreedToRegulations = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreedToRegulations = val ?? false),
                       ),
                       Expanded(
                         child: Text(
-                          'Đội trưởng cam kết toàn bộ thông tin phương tiện, chứng chỉ chuyên môn và nhân sự khai báo là chính xác trước pháp luật; cam kết chấp hành sự điều phối của Ban Chỉ huy PCTT&TKCN địa phương và tuân thủ Nghị định 93/2021/NĐ-CP.',
-                          style: AppTypography.secondary.copyWith(fontSize: 12, height: 1.4),
+                          'Tôi xác nhận thông tin đã khai là đúng. Hồ sơ sẽ được kiểm tra trước khi đội được duyệt.',
+                          style: AppTypography.secondary.copyWith(
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                     ],
@@ -495,7 +633,7 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
 
                 // Submit & OTP
                 AppButton(
-                  text: 'Tiếp tục & Xác thực OTP Đội trưởng',
+                  text: 'Tiếp tục',
                   icon: Icons.arrow_forward,
                   onPressed: _proceedToOtp,
                 ),
@@ -504,7 +642,12 @@ class _R02RescueRegisterScreenState extends State<R02RescueRegisterScreen> {
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Đã có tài khoản đội? Đăng nhập ngay', style: AppTypography.secondaryMedium.copyWith(color: AppColors.primary)),
+                    child: Text(
+                      'Đã có tài khoản? Đăng nhập',
+                      style: AppTypography.secondaryMedium.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

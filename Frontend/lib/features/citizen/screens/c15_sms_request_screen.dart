@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -14,9 +15,13 @@ class C15SmsRequestScreen extends StatefulWidget {
 class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
   String _urgencyCode = 'KC'; // KC: Khẩn cấp, HT: Cần hỗ trợ
   int _peopleCount = 4;
-  final _addressController = TextEditingController(text: 'So 42 Nam Hai, Nam Phuong Tien, Chuong My');
-  final _needsController = TextEditingController(text: 'SO TAN, NUOC UONG, LUONG THUC');
-  final String _destNumber = '0912 000 114';
+  final _addressController = TextEditingController(
+    text: 'So 42 Nam Hai, Nam Phuong Tien, Chuong My',
+  );
+  final _needsController = TextEditingController(
+    text: 'SO TAN, NUOC UONG, LUONG THUC',
+  );
+  final String _destNumber = 'Chưa cấu hình';
 
   String get _generatedSmsBody {
     return 'CUUTRO $_urgencyCode $_peopleCount ${_addressController.text.trim()} ${_needsController.text.trim()}';
@@ -26,7 +31,9 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.primary,
-        content: Text('Đang mở ứng dụng tin nhắn với nội dung: "$_generatedSmsBody" tới số $_destNumber'),
+        content: const Text(
+          'Chức năng gửi SMS chưa khả dụng. Chưa gửi tin nhắn.',
+        ),
       ),
     );
   }
@@ -36,7 +43,7 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Cứu trợ bằng SMS (Ngoại tuyến)',
+        title: 'Gửi yêu cầu qua SMS',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -57,16 +64,23 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.signal_cellular_connected_no_internet_4_bar, color: AppColors.primary, size: 28),
+                    const Icon(
+                      Icons.signal_cellular_connected_no_internet_4_bar,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Tính năng cứu trợ khi mất Internet', style: AppTypography.cardTitle),
+                          Text(
+                            'Gửi tin nhắn khi không có Internet',
+                            style: AppTypography.cardTitle,
+                          ),
                           const SizedBox(height: 4),
                           Text(
-                            'Khi bão lũ làm đứt cáp quang hoặc mất trạm phát sóng 3G/4G, hệ thống sẽ tự động chuyển cú pháp sang tin nhắn SMS chuẩn gửi trực tiếp về Ban điều phối cứu trợ.',
+                            'Gửi yêu cầu qua SMS hiện chưa khả dụng. Bạn có thể soạn và lưu nháp trong ứng dụng để gửi khi có kết nối.',
                             style: AppTypography.secondary,
                           ),
                         ],
@@ -84,7 +98,10 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                 children: [
                   Expanded(
                     child: RadioListTile<String>(
-                      title: Text('Cực kỳ khẩn cấp (KC)', style: AppTypography.bodyMedium),
+                      title: Text(
+                        'Cực kỳ khẩn cấp (KC)',
+                        style: AppTypography.bodyMedium,
+                      ),
                       value: 'KC',
                       groupValue: _urgencyCode,
                       activeColor: AppColors.danger,
@@ -93,7 +110,10 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                   ),
                   Expanded(
                     child: RadioListTile<String>(
-                      title: Text('Cần cứu trợ (HT)', style: AppTypography.bodyMedium),
+                      title: Text(
+                        'Cần cứu trợ (HT)',
+                        style: AppTypography.bodyMedium,
+                      ),
                       value: 'HT',
                       groupValue: _urgencyCode,
                       activeColor: AppColors.primary,
@@ -104,12 +124,16 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
               ),
               const SizedBox(height: 16),
 
-              Text('Số lượng người cần cứu', style: AppTypography.sectionTitle),
+              Text('Số người cần hỗ trợ', style: AppTypography.sectionTitle),
               const SizedBox(height: 8),
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 32, color: AppColors.primary),
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      size: 32,
+                      color: AppColors.primary,
+                    ),
                     onPressed: () {
                       if (_peopleCount > 1) {
                         setState(() => _peopleCount--);
@@ -118,7 +142,11 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                   ),
                   Text('$_peopleCount người', style: AppTypography.cardTitle),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline, size: 32, color: AppColors.primary),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      size: 32,
+                      color: AppColors.primary,
+                    ),
                     onPressed: () {
                       if (_peopleCount < 30) {
                         setState(() => _peopleCount++);
@@ -129,7 +157,10 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
               ),
               const SizedBox(height: 16),
 
-              Text('Địa chỉ & Điểm mốc (Viết không dấu)', style: AppTypography.sectionTitle),
+              Text(
+                'Địa chỉ và mốc nhận diện (viết không dấu)',
+                style: AppTypography.sectionTitle,
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: _addressController,
@@ -138,7 +169,9 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -152,7 +185,9 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.surface,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -174,14 +209,22 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Gửi tới tổng đài: $_destNumber', style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark)),
+                        Text(
+                          'Gửi tới tổng đài: $_destNumber',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
                         const Icon(Icons.sms, color: AppColors.primaryDark),
                       ],
                     ),
                     const Divider(height: 16, color: AppColors.border),
                     SelectableText(
                       _generatedSmsBody,
-                      style: AppTypography.bodyMedium.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -190,7 +233,7 @@ class _C15SmsRequestScreenState extends State<C15SmsRequestScreen> {
 
               // Submit SMS button
               AppButton(
-                text: 'Mở ứng dụng Tin nhắn (SMS) để gửi',
+                text: 'Gửi tin nhắn',
                 icon: Icons.send,
                 onPressed: _sendSms,
               ),

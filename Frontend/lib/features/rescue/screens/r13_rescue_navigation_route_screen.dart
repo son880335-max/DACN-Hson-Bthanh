@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -8,16 +9,15 @@ import 'r21_complete_task_screen.dart';
 class R13RescueNavigationRouteScreen extends StatefulWidget {
   final List<Map<String, dynamic>> tasks;
 
-  const R13RescueNavigationRouteScreen({
-    super.key,
-    required this.tasks,
-  });
+  const R13RescueNavigationRouteScreen({super.key, required this.tasks});
 
   @override
-  State<R13RescueNavigationRouteScreen> createState() => _R13RescueNavigationRouteScreenState();
+  State<R13RescueNavigationRouteScreen> createState() =>
+      _R13RescueNavigationRouteScreenState();
 }
 
-class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRouteScreen> {
+class _R13RescueNavigationRouteScreenState
+    extends State<R13RescueNavigationRouteScreen> {
   int _currentStepIndex = 0;
   final Set<int> _completedStepIndices = {};
 
@@ -31,7 +31,9 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.success,
-        content: Text('Đã hoàn tất hỗ trợ tại điểm ${widget.tasks[_currentStepIndex]['id']}! Đang chuyển lộ trình sang điểm tiếp theo.'),
+        content: Text(
+          'Đã hoàn tất hỗ trợ tại điểm ${widget.tasks[_currentStepIndex]['id']}! Đang chuyển lộ trình sang điểm tiếp theo.',
+        ),
       ),
     );
   }
@@ -83,13 +85,19 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'ĐANG MẤT SÓNG • Hoạt động bằng GPS & Bản đồ ngoại tuyến',
-                      style: AppTypography.secondary.copyWith(color: const Color(0xFFE2E8F0), fontSize: 12),
+                      'Bản đồ minh họa, không dùng để dẫn đường',
+                      style: AppTypography.secondary.copyWith(
+                        color: const Color(0xFFE2E8F0),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                   Text(
-                    'Độc quyền: Đội Hương Thủy',
-                    style: AppTypography.secondaryMedium.copyWith(color: const Color(0xFF93C5FD), fontSize: 12),
+                    'Dữ liệu mẫu',
+                    style: AppTypography.secondaryMedium.copyWith(
+                      color: const Color(0xFF93C5FD),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -113,15 +121,15 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                           color: isCurrent
                               ? AppColors.primaryContainer
                               : isDone
-                                  ? AppColors.successContainer
-                                  : AppColors.surfaceContainerLow,
+                              ? AppColors.successContainer
+                              : AppColors.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isCurrent
                                 ? AppColors.primary
                                 : isDone
-                                    ? AppColors.success
-                                    : AppColors.borderSubtle,
+                                ? AppColors.success
+                                : AppColors.borderSubtle,
                             width: isCurrent ? 2 : 1,
                           ),
                         ),
@@ -131,19 +139,30 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 if (isDone)
-                                  const Icon(Icons.check_circle, size: 14, color: AppColors.success)
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 14,
+                                    color: AppColors.success,
+                                  )
                                 else
-                                  Text('${index + 1}',
-                                      style: AppTypography.chip.copyWith(
-                                        fontSize: 13,
-                                        color: isCurrent ? AppColors.primaryDark : AppColors.textSecondary,
-                                      )),
+                                  Text(
+                                    '${index + 1}',
+                                    style: AppTypography.chip.copyWith(
+                                      fontSize: 13,
+                                      color: isCurrent
+                                          ? AppColors.primaryDark
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 2),
                             Text(
                               widget.tasks[index]['id'] as String,
-                              style: AppTypography.secondary.copyWith(fontSize: 11, fontWeight: FontWeight.bold),
+                              style: AppTypography.secondary.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                               maxLines: 1,
                             ),
                           ],
@@ -179,7 +198,11 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                               color: Colors.white.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.navigation, color: Colors.white, size: 30),
+                            child: const Icon(
+                              Icons.navigation,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -188,12 +211,17 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                               children: [
                                 Text(
                                   'Khoảng cách: ${currentTask['distance']}',
-                                  style: AppTypography.cardTitle.copyWith(color: Colors.white),
+                                  style: AppTypography.cardTitle.copyWith(
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'Hướng Tây Bắc 315° • Lái thuyền thẳng theo trục đê ngập',
-                                  style: AppTypography.secondary.copyWith(color: Colors.white.withOpacity(0.9), fontSize: 13),
+                                  style: AppTypography.secondary.copyWith(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
@@ -226,25 +254,43 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                             top: 12,
                             left: 12,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.9),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text('Tọa độ: ${currentTask['gps']}', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                              child: Text(
+                                'Tọa độ: ${currentTask['gps']}',
+                                style: AppTypography.secondary.copyWith(
+                                  fontSize: 12,
+                                ),
+                              ),
                             ),
                           ),
                           Positioned(
                             bottom: 12,
                             right: 12,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.dangerContainer,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(color: AppColors.danger),
                               ),
-                              child: Text('Tránh xoáy nước cống tràn', style: AppTypography.secondary.copyWith(color: AppColors.danger, fontSize: 11, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                'Tránh xoáy nước cống tràn',
+                                style: AppTypography.secondary.copyWith(
+                                  color: AppColors.danger,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -253,7 +299,10 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                     const SizedBox(height: 16),
 
                     // Current Citizen Information Card
-                    Text('Điểm cứu trợ hiện tại: ${currentTask['id']}', style: AppTypography.sectionTitle),
+                    Text(
+                      'Điểm cứu trợ hiện tại: ${currentTask['id']}',
+                      style: AppTypography.sectionTitle,
+                    ),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -270,27 +319,49 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                               const CircleAvatar(
                                 radius: 22,
                                 backgroundColor: AppColors.primaryContainer,
-                                child: Icon(Icons.person, color: AppColors.primaryDark),
+                                child: Icon(
+                                  Icons.person,
+                                  color: AppColors.primaryDark,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('${currentTask['citizen']} (${currentTask['people']} người)', style: AppTypography.cardTitle),
+                                    Text(
+                                      '${currentTask['citizen']} (${currentTask['people']} người)',
+                                      style: AppTypography.cardTitle,
+                                    ),
                                     const SizedBox(height: 2),
-                                    Text('SĐT liên hệ: ${currentTask['phone']}', style: AppTypography.secondaryMedium),
+                                    Text(
+                                      'SĐT liên hệ: ${currentTask['phone']}',
+                                      style: AppTypography.secondaryMedium,
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          const Divider(height: 20, color: AppColors.borderSubtle),
-                          _buildDetailRow('Địa chỉ:', currentTask['address'] as String),
+                          const Divider(
+                            height: 20,
+                            color: AppColors.borderSubtle,
+                          ),
+                          _buildDetailRow(
+                            'Địa chỉ:',
+                            currentTask['address'] as String,
+                          ),
                           const SizedBox(height: 6),
-                          _buildDetailRow('Nhu cầu:', currentTask['needs'] as String, isHighlight: true),
+                          _buildDetailRow(
+                            'Nhu cầu:',
+                            currentTask['needs'] as String,
+                            isHighlight: true,
+                          ),
                           const SizedBox(height: 6),
-                          _buildDetailRow('Mốc nhận dạng:', currentTask['notes'] as String),
+                          _buildDetailRow(
+                            'Mốc nhận diện:',
+                            currentTask['notes'] as String,
+                          ),
                         ],
                       ),
                     ),
@@ -320,13 +391,14 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
                   ],
                   if (!isLastStep) ...[
                     AppButton(
-                      text: 'Chuyển sang điểm tiếp theo (${_currentStepIndex + 2}/${widget.tasks.length})',
+                      text:
+                          'Chuyển sang điểm tiếp theo (${_currentStepIndex + 2}/${widget.tasks.length})',
                       variant: AppButtonVariant.secondary,
                       onPressed: () => setState(() => _currentStepIndex++),
                     ),
                   ] else ...[
                     AppButton(
-                      text: 'Nghiệm thu toàn bộ danh sách cứu trợ',
+                      text: 'Xem biểu mẫu kết quả',
                       icon: Icons.assignment_turned_in,
                       variant: AppButtonVariant.primary,
                       onPressed: _finishAllRoute,
@@ -341,15 +413,27 @@ class _R13RescueNavigationRouteScreenState extends State<R13RescueNavigationRout
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isHighlight = false,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 100, child: Text(label, style: AppTypography.secondaryMedium)),
+        SizedBox(
+          width: 100,
+          child: Text(label, style: AppTypography.secondaryMedium),
+        ),
         Expanded(
           child: Text(
             value,
-            style: isHighlight ? AppTypography.bodyMedium.copyWith(color: AppColors.danger, fontWeight: FontWeight.w600) : AppTypography.bodyMedium,
+            style: isHighlight
+                ? AppTypography.bodyMedium.copyWith(
+                    color: AppColors.danger,
+                    fontWeight: FontWeight.w600,
+                  )
+                : AppTypography.bodyMedium,
           ),
         ),
       ],
@@ -361,7 +445,10 @@ class _OfflineRouteMapPainter extends CustomPainter {
   final int currentIndex;
   final int totalSteps;
 
-  _OfflineRouteMapPainter({required this.currentIndex, required this.totalSteps});
+  _OfflineRouteMapPainter({
+    required this.currentIndex,
+    required this.totalSteps,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {

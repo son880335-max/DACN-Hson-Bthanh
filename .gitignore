@@ -22,7 +22,6 @@ Frontend/.packages
 Frontend/*.iml
 Frontend/.idea/
 
-
 Backend/node_modules/
 Backend/dist/
 Backend/build/
@@ -31,3 +30,26 @@ Backend/__pycache__/
 Backend/*.pyc
 Backend/venv/
 Backend/target/
+
+# Local Python tool caches
+__pycache__/
+*.pyc
+
+# Sprint 2 local runtime and Android signing files
+.local/
+Frontend/android/build/
+Frontend/android/key.properties
+*.jks
+*.keystore
+**/.env
+**/.env.*
+!**/.env.example
+
+# Private handoff/reference files are shared separately from the application source.
+/AGENTS.md
+/PROJECT_HANDOFF.md
+/PRODUCT BACKLOG.xlsx
+/docs/
+/tools/
+/Backend/docs/
+/.github/

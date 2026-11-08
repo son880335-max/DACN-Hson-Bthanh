@@ -48,7 +48,7 @@ class _C13FloodMapScreenState extends State<C13FloodMapScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppHeader(
-        title: 'Bản đồ ngập & Điểm sơ tán',
+        title: 'Bản đồ ngập (minh họa)',
         showBackButton: false,
       ),
       body: SafeArea(

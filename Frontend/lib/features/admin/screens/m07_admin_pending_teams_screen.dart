@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_header.dart';
@@ -8,10 +9,12 @@ class M07AdminPendingTeamsScreen extends StatefulWidget {
   const M07AdminPendingTeamsScreen({super.key});
 
   @override
-  State<M07AdminPendingTeamsScreen> createState() => _M07AdminPendingTeamsScreenState();
+  State<M07AdminPendingTeamsScreen> createState() =>
+      _M07AdminPendingTeamsScreenState();
 }
 
-class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen> {
+class _M07AdminPendingTeamsScreenState
+    extends State<M07AdminPendingTeamsScreen> {
   final List<Map<String, dynamic>> _teams = [
     {
       'id': 'TEAM-DK-04',
@@ -64,7 +67,9 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.primary,
-        content: Text('Đã phê duyệt và kích hoạt tài khoản cho ${_teams[index]['name']}!'),
+        content: Text(
+          'Đã phê duyệt và kích hoạt tài khoản cho ${_teams[index]['name']}!',
+        ),
       ),
     );
   }
@@ -86,7 +91,7 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppHeader(
-        title: 'Xét duyệt hồ sơ Đội cứu hộ',
+        title: 'Duyệt đội cứu hộ (minh họa)',
         showBackButton: false,
       ),
       body: SafeArea(
@@ -112,21 +117,37 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(team['id'] as String, style: AppTypography.cardTitle.copyWith(color: AppColors.primaryDark)),
+                      Text(
+                        team['id'] as String,
+                        style: AppTypography.cardTitle.copyWith(
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: isApproved
                               ? AppColors.successContainer
                               : isPending
-                                  ? AppColors.warningContainer
-                                  : AppColors.dangerContainer,
+                              ? AppColors.warningContainer
+                              : AppColors.dangerContainer,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          isApproved ? 'Đã phê duyệt' : isPending ? 'Chờ thẩm định' : 'Từ chối',
+                          isApproved
+                              ? 'Đã phê duyệt'
+                              : isPending
+                              ? 'Chờ duyệt'
+                              : 'Từ chối',
                           style: AppTypography.chip.copyWith(
-                            color: isApproved ? AppColors.success : isPending ? AppColors.warning : AppColors.danger,
+                            color: isApproved
+                                ? AppColors.success
+                                : isPending
+                                ? AppColors.warning
+                                : AppColors.danger,
                             fontSize: 12,
                           ),
                         ),
@@ -136,14 +157,27 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                   const SizedBox(height: 8),
                   Text(team['name'] as String, style: AppTypography.cardTitle),
                   const SizedBox(height: 4),
-                  Text('Trưởng đội: ${team['leader']}', style: AppTypography.bodyMedium),
+                  Text(
+                    'Trưởng đội: ${team['leader']}',
+                    style: AppTypography.bodyMedium,
+                  ),
                   const SizedBox(height: 4),
-                  Text('Nhân sự: ${team['members']} thành viên', style: AppTypography.secondary),
+                  Text(
+                    'Nhân sự: ${team['members']} thành viên',
+                    style: AppTypography.secondary,
+                  ),
                   const SizedBox(height: 4),
-                  Text('Phương tiện: ${team['equipment']}', style: AppTypography.secondary),
+                  Text(
+                    'Phương tiện: ${team['equipment']}',
+                    style: AppTypography.secondary,
+                  ),
                   const SizedBox(height: 4),
-                  Text('Năng lực: ${team['certification']}',
-                      style: AppTypography.secondaryMedium.copyWith(color: AppColors.primaryDark)),
+                  Text(
+                    'Năng lực: ${team['certification']}',
+                    style: AppTypography.secondaryMedium.copyWith(
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
                   const Divider(height: 16, color: AppColors.borderSubtle),
 
                   // View full profile & proofs button
@@ -154,10 +188,12 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                         foregroundColor: AppColors.primary,
                         side: const BorderSide(color: AppColors.primary),
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       icon: const Icon(Icons.file_present_outlined, size: 18),
-                      label: const Text('Xem chi tiết hồ sơ & minh chứng (4 tệp)'),
+                      label: const Text('Xem hồ sơ và giấy tờ'),
                       onPressed: () => _openTeamDetail(index),
                     ),
                   ),
@@ -172,7 +208,9 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                               foregroundColor: AppColors.danger,
                               side: const BorderSide(color: AppColors.danger),
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: () => _rejectTeam(index),
                             child: const Text('Từ chối'),
@@ -185,10 +223,12 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                             onPressed: () => _approveTeam(index),
-                            child: const Text('Phê duyệt nhanh'),
+                            child: const Text('Duyệt hồ sơ'),
                           ),
                         ),
                       ],
@@ -196,14 +236,23 @@ class _M07AdminPendingTeamsScreenState extends State<M07AdminPendingTeamsScreen>
                   else
                     Row(
                       children: [
-                        Icon(isApproved ? Icons.verified : Icons.cancel,
-                            color: isApproved ? AppColors.success : AppColors.danger, size: 20),
+                        Icon(
+                          isApproved ? Icons.verified : Icons.cancel,
+                          color: isApproved
+                              ? AppColors.success
+                              : AppColors.danger,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            isApproved ? 'Đội đã sẵn sàng nhận nhiệm vụ cứu hộ' : 'Hồ sơ chưa đạt yêu cầu an toàn kỹ thuật',
+                            isApproved
+                                ? 'Đội đã sẵn sàng nhận nhiệm vụ cứu hộ'
+                                : 'Hồ sơ chưa đạt yêu cầu an toàn kỹ thuật',
                             style: AppTypography.secondaryMedium.copyWith(
-                              color: isApproved ? AppColors.success : AppColors.danger,
+                              color: isApproved
+                                  ? AppColors.success
+                                  : AppColors.danger,
                             ),
                           ),
                         ),

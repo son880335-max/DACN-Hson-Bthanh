@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/sync_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -8,7 +10,8 @@ class A06ChangePasswordScreen extends StatefulWidget {
   const A06ChangePasswordScreen({super.key});
 
   @override
-  State<A06ChangePasswordScreen> createState() => _A06ChangePasswordScreenState();
+  State<A06ChangePasswordScreen> createState() =>
+      _A06ChangePasswordScreenState();
 }
 
 class _A06ChangePasswordScreenState extends State<A06ChangePasswordScreen> {
@@ -17,38 +20,13 @@ class _A06ChangePasswordScreenState extends State<A06ChangePasswordScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscureCurrent = true;
   bool _obscureNew = true;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   void _handleChangePassword() {
-    if (_currentPasswordController.text.isEmpty ||
-        _newPasswordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng điền đầy đủ các thông tin.')),
-      );
-      return;
-    }
-
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu xác nhận không khớp.')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: AppColors.success,
-            content: Text('Đổi mật khẩu thành công!'),
-          ),
-        );
-        Navigator.of(context).pop();
-      }
-    });
+    showFailure(
+      context,
+      'Chức năng đổi mật khẩu chưa khả dụng. Mật khẩu hiện tại chưa thay đổi.',
+    );
   }
 
   @override
@@ -78,10 +56,13 @@ class _A06ChangePasswordScreenState extends State<A06ChangePasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Thiết lập mật khẩu mới', style: AppTypography.cardTitle),
+                      Text('Đặt mật khẩu mới', style: AppTypography.cardTitle),
                       const SizedBox(height: 16),
 
-                      Text('Mật khẩu hiện tại', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Mật khẩu hiện tại',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _currentPasswordController,
@@ -91,31 +72,48 @@ class _A06ChangePasswordScreenState extends State<A06ChangePasswordScreen> {
                           hintText: 'Nhập mật khẩu đang dùng',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                            icon: Icon(
+                              _obscureCurrent
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureCurrent = !_obscureCurrent,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      Text('Mật khẩu mới', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Mật khẩu mới',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _newPasswordController,
                         obscureText: _obscureNew,
                         style: AppTypography.body,
                         decoration: InputDecoration(
-                          hintText: 'Tối thiểu 6 ký tự',
+                          hintText: 'Nhập mật khẩu mới',
                           prefixIcon: const Icon(Icons.lock_reset),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                            icon: Icon(
+                              _obscureNew
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscureNew = !_obscureNew),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      Text('Xác nhận mật khẩu mới', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Xác nhận mật khẩu mới',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _confirmPasswordController,

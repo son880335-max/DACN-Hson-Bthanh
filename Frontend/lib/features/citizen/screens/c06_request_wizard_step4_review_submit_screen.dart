@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/data/request_draft.dart';
+import '../../../core/data/request_presentation.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -13,6 +19,7 @@ class C06RequestWizardStep4ReviewSubmitScreen extends StatefulWidget {
   final String landmark;
   final int photosCount;
   final String photoNote;
+  final RequestDraft? draft;
 
   const C06RequestWizardStep4ReviewSubmitScreen({
     super.key,
@@ -23,66 +30,65 @@ class C06RequestWizardStep4ReviewSubmitScreen extends StatefulWidget {
     required this.landmark,
     required this.photosCount,
     required this.photoNote,
+    this.draft,
   });
 
   @override
-  State<C06RequestWizardStep4ReviewSubmitScreen> createState() => _C06RequestWizardStep4ReviewSubmitScreenState();
+  State<C06RequestWizardStep4ReviewSubmitScreen> createState() =>
+      _C06RequestWizardStep4ReviewSubmitScreenState();
 }
 
-class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWizardStep4ReviewSubmitScreen> {
+class _C06RequestWizardStep4ReviewSubmitScreenState
+    extends State<C06RequestWizardStep4ReviewSubmitScreen> {
   bool _isSubmitting = false;
+  RequestDraft get _draft => widget.draft ?? RequestDraft();
 
-  void _submitRequest() {
+  Future<void> _submitRequest() async {
+    if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
-    Future.delayed(const Duration(milliseconds: 900), () {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogCtx) => AlertDialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.primary, size: 28),
-                const SizedBox(width: 10),
-                Text('Đã tiếp nhận yêu cầu!', style: AppTypography.cardTitle),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mã yêu cầu cứu trợ của bạn là: CR-0247',
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Hệ thống đang chuyển thông tin tới các đội cứu hộ gần nhất trên địa bàn. Vui lòng giữ liên lạc qua số điện thoại đã đăng ký.',
-                  style: AppTypography.body,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(dialogCtx).pop();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) => const C08RequestDetailWaitingScreen(requestId: 'CR-0247'),
-                    ),
-                    (route) => route.isFirst,
-                  );
-                },
-                child: Text('Xem chi tiết đơn', style: AppTypography.button.copyWith(color: AppColors.primary)),
-              ),
-            ],
-          ),
+    try {
+      final result = await reliefRepository.submit(_draft);
+      if (!mounted) return;
+      if (result['pending'] == true) {
+        showFailure(
+          context,
+          'Yêu cầu đang chờ gửi. Nội dung đã lưu trên thiết bị; hãy kiểm tra kết nối và thử lại.',
         );
+        return;
       }
-    });
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            _draft.requestId == null
+                ? 'Đã tiếp nhận yêu cầu'
+                : 'Đã lưu thay đổi',
+            style: AppTypography.cardTitle,
+          ),
+          content: Text(
+            'Mã yêu cầu: ${result['requestId']}\nGhi nhận lúc: ${formatTimestamp(result['serverSavedAt'], seconds: true)}${result['photosPending'] == true ? '\nẢnh bổ sung đang được gửi riêng; nội dung yêu cầu đã được lưu.' : ''}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Xem yêu cầu'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) =>
+              C08RequestDetailWaitingScreen(requestId: result['requestId']),
+        ),
+        (route) => route.isFirst,
+      );
+    } catch (error) {
+      if (mounted) showFailure(context, error);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -90,7 +96,7 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Kiểm tra & Gửi đơn cứu trợ',
+        title: 'Xem lại yêu cầu',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -107,14 +113,19 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primaryContainer,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             'Bước 4/4',
-                            style: AppTypography.chip.copyWith(color: AppColors.primaryDark),
+                            style: AppTypography.chip.copyWith(
+                              color: AppColors.primaryDark,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -128,7 +139,7 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Vui lòng rà soát cẩn thận các nội dung dưới đây trước khi gửi lên ban điều phối cứu trợ.',
+                      'Kiểm tra nhu cầu, vị trí và thông tin liên hệ trước khi gửi.',
                       style: AppTypography.body,
                     ),
                     const SizedBox(height: 20),
@@ -138,31 +149,59 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
                       title: 'Nhu cầu cứu trợ',
                       icon: Icons.assignment_outlined,
                       items: [
-                        _buildRow('Loại cứu trợ:', widget.reliefTypes.join(', ')),
-                        _buildRow('Số lượng người cần hỗ trợ:', '${widget.totalPeople} người'),
-                        _buildRow('Mức độ cấp bách:', widget.urgency, isUrgent: true),
+                        _buildRow(
+                          'Loại hỗ trợ:',
+                          widget.reliefTypes.join(', '),
+                        ),
+                        _buildRow('Số người:', '${widget.totalPeople} người'),
+                        _buildRow(
+                          'Mức độ khẩn cấp:',
+                          widget.urgency,
+                          isUrgent: true,
+                        ),
+                        _buildRow(
+                          'Nhóm cần chăm sóc:',
+                          'Người cao tuổi: ${_draft.values['elderly']}, trẻ em: ${_draft.values['children']}, người khuyết tật: ${_draft.values['disabled']}, cần chăm sóc đặc biệt: ${_draft.values['special']}',
+                        ),
+                        _buildRow(
+                          'Chăm sóc bổ sung:',
+                          _draft.values['specialNotes'],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
                     // Card 2: Location
                     _buildSummaryCard(
-                      title: 'Vị trí & Địa chỉ',
+                      title: 'Vị trí và địa chỉ',
                       icon: Icons.location_on_outlined,
                       items: [
                         _buildRow('Địa chỉ:', widget.address),
-                        _buildRow('Điểm mốc / Nhận diện:', widget.landmark),
-                        _buildRow('Tọa độ GPS:', '20.8841° N, 105.6215° E (±8m)'),
+                        _buildRow('Mốc nhận diện:', widget.landmark),
+                        _buildRow(
+                          'Tọa độ:',
+                          '${_draft.values['latitude']}, ${_draft.values['longitude']}',
+                        ),
+                        _buildRow(
+                          'Xác nhận vị trí lúc:',
+                          formatTimestamp(
+                            _draft.values['locationConfirmedAt'],
+                            seconds: true,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
                     // Card 3: Photos & Note
                     _buildSummaryCard(
-                      title: 'Ảnh & Ghi chú',
+                      title: 'Ảnh và mô tả',
                       icon: Icons.photo_library_outlined,
                       items: [
-                        _buildRow('Ảnh đính kèm:', '${widget.photosCount} ảnh đã lưu'),
+                        _buildRow(
+                          'Ảnh đính kèm:',
+                          '${widget.photosCount} ảnh đã lưu',
+                        ),
                         if (widget.photoNote.isNotEmpty)
                           _buildRow('Ghi chú bổ sung:', widget.photoNote),
                       ],
@@ -174,8 +213,16 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
                       title: 'Người liên hệ',
                       icon: Icons.person_outline,
                       items: [
-                        _buildRow('Họ và tên:', 'Nguyễn Văn An'),
-                        _buildRow('Số điện thoại:', '0912 345 678'),
+                        _buildRow(
+                          'Họ và tên:',
+                          reliefRepository.account?['displayName'] ??
+                              'Chưa đăng nhập',
+                        ),
+                        _buildRow(
+                          'Số điện thoại:',
+                          reliefRepository.account?['phone'] ??
+                              'Chưa đăng nhập',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -191,12 +238,18 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.info_outline, color: AppColors.warning, size: 24),
+                          const Icon(
+                            Icons.info_outline,
+                            color: AppColors.warning,
+                            size: 24,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Cam kết thông tin trung thực: Mọi hành vi báo khống hoặc phóng đại có thể làm lỡ cơ hội cứu nạn của đồng bào khác đang trong tình thế nguy kịch.',
-                              style: AppTypography.secondaryMedium.copyWith(color: AppColors.warning),
+                              'Thông tin đúng với tình trạng hiện tại giúp đội cứu hộ chuẩn bị hỗ trợ phù hợp.',
+                              style: AppTypography.secondaryMedium.copyWith(
+                                color: AppColors.warning,
+                              ),
                             ),
                           ),
                         ],
@@ -218,8 +271,11 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  const SyncStatus(),
                   AppButton(
-                    text: 'Gửi yêu cầu cứu trợ',
+                    text: _draft.requestId == null
+                        ? 'Gửi yêu cầu cứu trợ'
+                        : 'Lưu thay đổi yêu cầu',
                     isLoading: _isSubmitting,
                     onPressed: _submitRequest,
                   ),
@@ -282,7 +338,10 @@ class _C06RequestWizardStep4ReviewSubmitScreenState extends State<C06RequestWiza
             child: Text(
               value,
               style: isUrgent
-                  ? AppTypography.bodyMedium.copyWith(color: AppColors.danger, fontWeight: FontWeight.w600)
+                  ? AppTypography.bodyMedium.copyWith(
+                      color: AppColors.danger,
+                      fontWeight: FontWeight.w600,
+                    )
                   : AppTypography.bodyMedium,
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -27,17 +28,26 @@ class A01RoleSelectionScreen extends StatelessWidget {
                 children: [
                   // Top Emergency Hotlines
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.dangerContainer.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+                      border: Border.all(
+                        color: AppColors.danger.withOpacity(0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.phone_in_talk, size: 16, color: AppColors.danger),
+                        const Icon(
+                          Icons.phone_in_talk,
+                          size: 16,
+                          color: AppColors.danger,
+                        ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
@@ -96,7 +106,7 @@ class A01RoleSelectionScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Nền tảng tiếp nhận cứu hộ và kết nối lực lượng ứng cứu mùa mưa lũ',
+                    'Gửi yêu cầu cứu trợ và theo dõi việc hỗ trợ',
                     textAlign: TextAlign.center,
                     style: AppTypography.secondary.copyWith(fontSize: 13),
                   ),
@@ -108,7 +118,10 @@ class A01RoleSelectionScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 1.5),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                        width: 1.5,
+                      ),
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x0C000000),
@@ -129,7 +142,11 @@ class A01RoleSelectionScreen extends StatelessWidget {
                                 color: AppColors.primaryContainer,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.person_pin_circle, color: AppColors.primary, size: 26),
+                              child: const Icon(
+                                Icons.person_pin_circle,
+                                color: AppColors.primary,
+                                size: 26,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -137,13 +154,17 @@ class A01RoleSelectionScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Dành cho Người dân',
-                                    style: AppTypography.cardTitle.copyWith(fontSize: 17),
+                                    'Người dân',
+                                    style: AppTypography.cardTitle.copyWith(
+                                      fontSize: 17,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Tài khoản định danh số điện thoại & OTP để gửi yêu cầu cứu trợ',
-                                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                                    'Gửi yêu cầu và theo dõi tiến độ cứu trợ.',
+                                    style: AppTypography.secondary.copyWith(
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -154,22 +175,27 @@ class A01RoleSelectionScreen extends StatelessWidget {
                         const SizedBox(height: 18),
 
                         AppButton(
-                          text: 'Đăng nhập Người dân',
+                          text: 'Đăng nhập',
                           icon: Icons.login,
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const A02CitizenLoginScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const A02CitizenLoginScreen(),
+                              ),
                             );
                           },
                         ),
                         const SizedBox(height: 10),
                         AppButton(
-                          text: 'Đăng ký tài khoản mới',
+                          text: 'Đăng ký tài khoản',
                           variant: AppButtonVariant.secondary,
                           icon: Icons.person_add_outlined,
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const A03CitizenRegisterScreen()),
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const A03CitizenRegisterScreen(),
+                              ),
                             );
                           },
                         ),
@@ -198,7 +224,11 @@ class A01RoleSelectionScreen extends StatelessWidget {
                                 color: AppColors.warningContainer,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.directions_boat_outlined, color: AppColors.warning, size: 24),
+                              child: const Icon(
+                                Icons.directions_boat_outlined,
+                                color: AppColors.warning,
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -206,13 +236,17 @@ class A01RoleSelectionScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Dành cho Đội Cứu hộ Tình nguyện',
-                                    style: AppTypography.cardTitle.copyWith(fontSize: 16),
+                                    'Đội cứu hộ',
+                                    style: AppTypography.cardTitle.copyWith(
+                                      fontSize: 16,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Lực lượng cứu nạn, tiếp nhận nhiệm vụ và điều phối xuồng',
-                                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                                    'Tiếp nhận nhiệm vụ và cập nhật tình hình cứu trợ.',
+                                    style: AppTypography.secondary.copyWith(
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -226,21 +260,34 @@ class A01RoleSelectionScreen extends StatelessWidget {
                               child: OutlinedButton.icon(
                                 onPressed: () {
                                   Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const R01RescueLoginScreen()),
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const R01RescueLoginScreen(),
+                                    ),
                                   );
                                 },
-                                icon: const Icon(Icons.login, size: 18, color: AppColors.primary),
+                                icon: const Icon(
+                                  Icons.login,
+                                  size: 18,
+                                  color: AppColors.primary,
+                                ),
                                 label: Text(
-                                  'Đăng nhập Đội',
+                                  'Đăng nhập',
                                   style: AppTypography.secondaryMedium.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: AppColors.primary),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  side: const BorderSide(
+                                    color: AppColors.primary,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ),
@@ -249,12 +296,19 @@ class A01RoleSelectionScreen extends StatelessWidget {
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const R02RescueRegisterScreen()),
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const R02RescueRegisterScreen(),
+                                    ),
                                   );
                                 },
-                                icon: const Icon(Icons.how_to_reg_outlined, size: 18, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.how_to_reg_outlined,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
                                 label: Text(
-                                  'Đăng ký Đội mới',
+                                  'Đăng ký',
                                   style: AppTypography.secondaryMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
@@ -262,8 +316,12 @@ class A01RoleSelectionScreen extends StatelessWidget {
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
                             ),
@@ -281,19 +339,28 @@ class A01RoleSelectionScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const M01AdminLoginScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const M01AdminLoginScreen(),
+                          ),
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.lock_outline, size: 14, color: AppColors.textMuted),
+                            const Icon(
+                              Icons.lock_outline,
+                              size: 14,
+                              color: AppColors.textMuted,
+                            ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                'Cổng điều phối Ban Chỉ huy PCTT & TKCN',
+                                'Dành cho quản trị viên',
                                 style: AppTypography.secondary.copyWith(
                                   fontSize: 12,
                                   color: AppColors.textMuted,
