@@ -1,4 +1,11 @@
+import '../../../core/data/request_presentation.dart';
+
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/notices_dialog.dart';
+import '../../../core/data/relief_repository.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -12,7 +19,11 @@ class C01HomeScreen extends StatelessWidget {
   const C01HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: reliefRepository,
+    builder: (context, _) => _page(context),
+  );
+  Widget _page(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
@@ -20,10 +31,15 @@ class C01HomeScreen extends StatelessWidget {
         showBackButton: false,
         actions: [
           IconButton(
+            tooltip: 'Thông báo yêu cầu',
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_none, size: 26, color: AppColors.textPrimary),
+                const Icon(
+                  Icons.notifications_none,
+                  size: 26,
+                  color: AppColors.textPrimary,
+                ),
                 Positioned(
                   right: -2,
                   top: -2,
@@ -34,18 +50,17 @@ class C01HomeScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Text(
-                      '2',
-                      style: AppTypography.button.copyWith(fontSize: 10, height: 1),
+                      '${reliefRepository.notices.where((n) => n['read'] != true).length}',
+                      style: AppTypography.button.copyWith(
+                        fontSize: 10,
+                        height: 1,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bạn có 2 thông báo cứu trợ mới.')),
-              );
-            },
+            onPressed: () => showNotices(context),
           ),
         ],
       ),
@@ -72,12 +87,14 @@ class C01HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Trang chủ cứu trợ',
-                              style: AppTypography.secondaryMedium.copyWith(color: AppColors.primary),
+                              'Hỗ trợ khi ngập lụt',
+                              style: AppTypography.secondaryMedium.copyWith(
+                                color: AppColors.primary,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Tiếp nhận yêu cầu hỗ trợ',
+                              'Gửi yêu cầu và theo dõi tiến độ cứu trợ.',
                               style: AppTypography.sectionTitle,
                             ),
                           ],
@@ -90,7 +107,10 @@ class C01HomeScreen extends StatelessWidget {
                           color: AppColors.primaryContainer,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.shield_outlined, color: AppColors.primary),
+                        child: const Icon(
+                          Icons.shield_outlined,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -112,14 +132,18 @@ class C01HomeScreen extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.wifi_off, color: AppColors.warning, size: 22),
+                          const Icon(
+                            Icons.wifi_off,
+                            color: AppColors.warning,
+                            size: 22,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Chế độ cứu trợ ngoại tuyến',
+                                  'Khi mạng yếu hoặc mất kết nối',
                                   style: AppTypography.cardTitle.copyWith(
                                     fontSize: 17,
                                     color: AppColors.warning,
@@ -127,7 +151,7 @@ class C01HomeScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Khi mất sóng Internet, bạn có thể gửi tin nhắn SMS cứu trợ trực tiếp từ điện thoại để chuyển tới lực lượng cứu nạn gần nhất.',
+                                  'Bạn có thể soạn và lưu nháp. Khi gửi, hãy kiểm tra yêu cầu đã được tiếp nhận. Gửi qua SMS hiện chưa khả dụng.',
                                   style: AppTypography.secondary.copyWith(
                                     color: const Color(0xFF92400E),
                                   ),
@@ -145,17 +169,22 @@ class C01HomeScreen extends StatelessWidget {
                         runSpacing: 8,
                         children: [
                           Text(
-                            'Chưa kết nối Internet',
-                            style: AppTypography.secondary.copyWith(fontSize: 13, fontStyle: FontStyle.italic),
+                            'Chưa được xác nhận khi mất kết nối',
+                            style: AppTypography.secondary.copyWith(
+                              fontSize: 13,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                           OutlinedButton.icon(
                             onPressed: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const C15SmsRequestScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const C15SmsRequestScreen(),
+                                ),
                               );
                             },
                             icon: const Icon(Icons.sms, size: 18),
-                            label: const Text('Chuyển sang SMS'),
+                            label: const Text('Xem cách gửi SMS'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.warning,
                               side: const BorderSide(color: AppColors.warning),
@@ -181,11 +210,15 @@ class C01HomeScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Chỉ sử dụng khi người thân đang nguy hiểm hoặc thiếu lương thực/nước sạch.',
+                          'Gửi yêu cầu cho bạn và những người cần hỗ trợ tại cùng địa điểm.',
                           style: AppTypography.secondary.copyWith(fontSize: 13),
                         ),
                       ),
@@ -195,159 +228,218 @@ class C01HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Active Ongoing Request Section (CR-0247)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 8,
-                                  children: [
-                                    Text(
-                                      'Yêu cầu #CR-0247',
-                                      style: AppTypography.cardTitle,
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.surfaceContainerLow,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text('09:15', style: AppTypography.secondary.copyWith(fontSize: 13)),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on, size: 16, color: AppColors.textMuted),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Xã Nam Phương Tiến, Chương Mỹ',
-                                        style: AppTypography.secondary,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const StatusChip(status: ReliefStatus.pending),
-                        ],
-                      ),
-                      const Divider(height: 24, color: AppColors.borderSubtle),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.canvas,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.borderSubtle),
-                        ),
-                        child: Column(
+                const SyncStatus(),
+                // Active Ongoing Request Section
+                if (reliefRepository.active != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Chi tiết ghi nhận:', style: AppTypography.bodyMedium),
-                            const SizedBox(height: 4),
-                            Text(
-                              '3 người lớn, 1 trẻ sơ sinh. Nước ngập ngang hiên nhà, cạn kiệt đồ ăn.',
-                              style: AppTypography.body,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    spacing: 8,
+                                    children: [
+                                      Text(
+                                        'Yêu cầu #${shortRequestId(reliefRepository.active?['id'] ?? '')}',
+                                        style: AppTypography.cardTitle,
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceContainerLow,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          formatTimestamp(
+                                            reliefRepository
+                                                .active?['createdAt'],
+                                          ),
+                                          style: AppTypography.secondary
+                                              .copyWith(fontSize: 13),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.location_on,
+                                        size: 16,
+                                        color: AppColors.textMuted,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          reliefRepository.active?['address'] ??
+                                              '',
+                                          style: AppTypography.secondary,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            StatusChip(
+                              status: stageStatus(
+                                reliefRepository.active?['stage'] ?? 'waiting',
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Đang xếp hàng phân công đội cứu hộ',
-                              style: AppTypography.secondary.copyWith(fontSize: 14),
-                            ),
+                        const Divider(
+                          height: 24,
+                          color: AppColors.borderSubtle,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.borderSubtle),
                           ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const C08RequestDetailWaitingScreen(requestId: 'CR-0247'),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Nội dung yêu cầu:',
+                                style: AppTypography.bodyMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${reliefRepository.active?['people']} người cần hỗ trợ: ${(reliefRepository.active?['types'] as List? ?? []).join(', ')}',
+                                style: AppTypography.body,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Đang chờ đội cứu hộ tiếp nhận',
+                                style: AppTypography.secondary.copyWith(
+                                  fontSize: 14,
                                 ),
-                              );
-                            },
-                            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                            child: Text(
-                              'Xem chi tiết',
-                              style: AppTypography.secondaryMedium.copyWith(color: AppColors.primary),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        C08RequestDetailWaitingScreen(
+                                          requestId:
+                                              reliefRepository.active!['id'],
+                                        ),
+                                  ),
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(48, 48),
+                              ),
+                              child: Text(
+                                'Xem chi tiết',
+                                style: AppTypography.secondaryMedium.copyWith(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
                 const SizedBox(height: 14),
 
                 // Saved Draft Recovery (US-021)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderSubtle),
+                if (reliefRepository.draft != null)
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderSubtle),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.edit_note,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bản nháp yêu cầu cứu trợ',
+                                style: AppTypography.cardTitle.copyWith(
+                                  fontSize: 17,
+                                ),
+                              ),
+                              Text(
+                                'Đã lưu trên thiết bị (chưa gửi)',
+                                style: AppTypography.secondary.copyWith(
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const C02RequestWizardStep1Screen(
+                                      isDraft: true,
+                                    ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                            foregroundColor: AppColors.primary,
+                          ),
+                          child: const Text('Tiếp tục'),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.edit_note, color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Bản nháp yêu cầu cứu trợ', style: AppTypography.cardTitle.copyWith(fontSize: 17)),
-                            Text('Tự động lưu lúc 08:30 (chưa gửi)', style: AppTypography.secondary.copyWith(fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const C02RequestWizardStep1Screen(isDraft: true)),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(48, 48),
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: const Text('Tiếp tục'),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -356,23 +448,43 @@ class C01HomeScreen extends StatelessWidget {
     );
   }
 
-  bool _hasActiveRequest() => true;
+  bool _hasActiveRequest() => reliefRepository.active != null;
 
   void _handleCreateRequest(BuildContext context) {
-    const activeRequestId = 'CR-0247';
+    if (!reliefRepository.signedIn) {
+      showFailure(context, 'Đăng nhập để gửi yêu cầu cứu trợ.');
+      return;
+    }
+    if (reliefRepository.operations.any((o) => o['kind'] != 'evidence')) {
+      showFailure(
+        context,
+        'Còn thao tác đang chờ máy chủ xác nhận. Hãy xem trạng thái gửi.',
+      );
+      return;
+    }
+    final activeRequestId = reliefRepository.active?['id'] ?? '';
 
     if (_hasActiveRequest()) {
       showDialog(
         context: context,
         builder: (dialogCtx) => AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 28),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.warning,
+                size: 28,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text('Không thể tạo thêm yêu cầu', style: AppTypography.cardTitle),
+                child: Text(
+                  'Không thể tạo thêm yêu cầu',
+                  style: AppTypography.cardTitle,
+                ),
               ),
             ],
           ),
@@ -381,12 +493,14 @@ class C01HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bạn đang có yêu cầu cứu hộ [$activeRequestId] đang trong trạng thái Đang chờ tiếp nhận.',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
+                'Bạn đang có yêu cầu ${shortRequestId(activeRequestId)} chưa hoàn thành.',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.primaryDark,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Theo quy định điều phối, bạn chỉ có thể tạo yêu cầu mới sau khi đội cứu trợ đã hoàn thành cứu hộ và có xác nhận hoàn tất nhiệm vụ hiện tại, nhằm đảm bảo nguồn lực xuồng máy không bị phân tán.',
+                'Mỗi tài khoản có một yêu cầu đang mở. Bạn có thể gửi mới sau khi yêu cầu này hoàn thành hoặc được xác nhận hủy. Khi chưa có đội tiếp nhận, bạn có thể sửa yêu cầu hiện tại.',
                 style: AppTypography.secondary,
               ),
             ],
@@ -405,18 +519,20 @@ class C01HomeScreen extends StatelessWidget {
                 Navigator.of(dialogCtx).pop();
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => const C08RequestDetailWaitingScreen(
+                    builder: (_) => C08RequestDetailWaitingScreen(
                       requestId: activeRequestId,
                       initialStatus: ReliefStatus.waiting,
-                      title: 'Sơ tán khẩn cấp & Lương thực',
-                      address: 'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
+                      title: (reliefRepository.active?['types'] as List? ?? [])
+                          .join(', '),
+                      address:
+                          'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
                       people: 4,
                       urgency: 'Cực kỳ khẩn cấp',
                     ),
                   ),
                 );
               },
-              child: const Text('Xem đơn hiện tại'),
+              child: const Text('Xem yêu cầu hiện tại'),
             ),
           ],
         ),

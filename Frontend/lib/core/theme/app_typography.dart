@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// Hệ thống Typography theo DESIGN.md: Font Be Vietnam Pro
-/// Quy tắc: Chữ nội dung 18sp, chữ phụ tối thiểu 16sp, nhãn/nút 17sp (600)
+
 class AppTypography {
   static TextStyle pageTitle = GoogleFonts.beVietnamPro(
     fontSize: 26,

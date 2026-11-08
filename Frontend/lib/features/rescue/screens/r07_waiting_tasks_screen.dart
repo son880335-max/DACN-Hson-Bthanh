@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/data/request_draft.dart';
+import '../../../core/data/request_presentation.dart';
+import '../../../core/widgets/sync_status.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_header.dart';
@@ -13,84 +19,28 @@ class R07WaitingTasksScreen extends StatefulWidget {
 }
 
 class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
-  final List<Map<String, dynamic>> _tasks = [
-    {
-      'id': 'TASK-8801',
-      'urgency': 'Cực kỳ khẩn cấp',
-      'isUrgent': true,
-      'title': '4 người kẹt trên gác xép, nước dâng ngập cổng 1.5m',
-      'address': 'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
-      'distance': '2.1 km',
-      'people': 4,
-      'time': '18:20 (12 phút trước)',
-      'tools': 'Cần xuồng máy, áo phao trẻ em',
-    },
-    {
-      'id': 'TASK-8802',
-      'urgency': 'Khẩn cấp',
-      'isUrgent': true,
-      'title': '2 người già cần thuốc huyết áp & nước sạch khẩn cấp',
-      'address': 'Xóm 3, Thôn Nhân Lý, Xã Nam Phương Tiến',
-      'distance': '3.4 km',
-      'people': 2,
-      'time': '18:10 (22 phút trước)',
-      'tools': 'Cần túi y tế, nước uống đóng chai',
-    },
-    {
-      'id': 'TASK-8803',
-      'urgency': 'Cần tiếp tế',
-      'isUrgent': false,
-      'title': 'Tiếp tế lương khô & nước sạch cho cụm 5 hộ bị chia cắt',
-      'address': 'Khu gò cao, Xã Tân Tiến, Chương Mỹ',
-      'distance': '4.8 km',
-      'people': 15,
-      'time': '17:45 (47 phút trước)',
-      'tools': 'Cần thuyền chở hàng nhu yếu phẩm',
-    },
-  ];
+  List<Json> get _tasks => reliefRepository.items.map(requestCard).toList();
+  @override
+  void initState() {
+    super.initState();
+    reliefRepository.addListener(_changed);
+    reliefRepository.refresh();
+  }
 
-  void _acceptTask(Map<String, dynamic> task) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Tiếp nhận nhiệm vụ', style: AppTypography.cardTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Đội của bạn sẽ nhận xử lý:', style: AppTypography.body),
-            const SizedBox(height: 8),
-            Text(
-              '${task['id']} - ${task['title']}',
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
-            ),
-            const SizedBox(height: 8),
-            Text('Địa chỉ: ${task['address']}', style: AppTypography.secondary),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Đóng', style: AppTypography.button.copyWith(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.onPrimary,
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => R12AssignedTaskDetailScreen(taskId: task['id'] as String),
-                ),
-              );
-            },
-            child: const Text('Nhận nhiệm vụ'),
-          ),
-        ],
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    reliefRepository.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _acceptTask(Json task) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => R12AssignedTaskDetailScreen(taskId: task['id']),
       ),
     );
   }
@@ -100,12 +50,17 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppHeader(
-        title: 'Nhiệm vụ chờ tiếp nhận',
+        title: 'Yêu cầu đang phụ trách',
         showBackButton: false,
       ),
       body: SafeArea(
         child: Column(
           children: [
+            const SyncStatus(),
+            TextButton(
+              onPressed: () => reliefRepository.refresh(),
+              child: const Text("Tải lại danh sách"),
+            ),
             // Status bar
             Container(
               color: AppColors.surface,
@@ -123,14 +78,17 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '${_tasks.length} yêu cầu trong bán kính 5km',
+                      '${_tasks.length} yêu cầu đang phụ trách',
                       style: AppTypography.bodyMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('Cập nhật 30s trước', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                  Text(
+                    'Tải lại để cập nhật',
+                    style: AppTypography.secondary.copyWith(fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -154,16 +112,29 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.cloud_download_outlined, color: Colors.white, size: 24),
+                    child: const Icon(
+                      Icons.cloud_download_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Chuẩn bị vào vùng mất sóng?', style: AppTypography.cardTitle.copyWith(fontSize: 15, color: AppColors.primaryDark)),
+                        Text(
+                          'Chuẩn bị vào vùng mất sóng?',
+                          style: AppTypography.cardTitle.copyWith(
+                            fontSize: 15,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        Text('Tải danh sách ngoại tuyến & gán nhiệm vụ', style: AppTypography.secondary.copyWith(fontSize: 13)),
+                        Text(
+                          'Xem danh sách ngoại tuyến minh họa',
+                          style: AppTypography.secondary.copyWith(fontSize: 13),
+                        ),
                       ],
                     ),
                   ),
@@ -172,15 +143,20 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       minimumSize: const Size(48, 42),
                     ),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const R17OfflineDownloadScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const R17OfflineDownloadScreen(),
+                        ),
                       );
                     },
-                    child: const Text('Tải gói'),
+                    child: const Text('Xem danh sách'),
                   ),
                 ],
               ),
@@ -200,7 +176,9 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: task['isUrgent'] ? AppColors.danger.withOpacity(0.5) : AppColors.borderSubtle,
+                        color: task['isUrgent']
+                            ? AppColors.danger.withOpacity(0.5)
+                            : AppColors.borderSubtle,
                         width: task['isUrgent'] ? 1.5 : 1,
                       ),
                     ),
@@ -210,17 +188,29 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(task['id'] as String, style: AppTypography.cardTitle.copyWith(color: AppColors.primary)),
+                            Text(
+                              shortRequestId(task['id']),
+                              style: AppTypography.cardTitle.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: task['isUrgent'] ? AppColors.dangerContainer : AppColors.warningContainer,
+                                color: task['isUrgent']
+                                    ? AppColors.dangerContainer
+                                    : AppColors.warningContainer,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
                                 task['urgency'] as String,
                                 style: AppTypography.chip.copyWith(
-                                  color: task['isUrgent'] ? AppColors.danger : AppColors.warning,
+                                  color: task['isUrgent']
+                                      ? AppColors.danger
+                                      : AppColors.warning,
                                   fontSize: 13,
                                 ),
                               ),
@@ -228,40 +218,83 @@ class _R07WaitingTasksScreenState extends State<R07WaitingTasksScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Text(task['title'] as String, style: AppTypography.bodyMedium),
+                        Text(
+                          task['title'] as String,
+                          style: AppTypography.bodyMedium,
+                        ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+                            const Icon(
+                              Icons.location_on_outlined,
+                              size: 16,
+                              color: AppColors.textSecondary,
+                            ),
                             const SizedBox(width: 4),
-                            Expanded(child: Text(task['address'] as String, style: AppTypography.secondary)),
+                            Expanded(
+                              child: Text(
+                                task['address'] as String,
+                                style: AppTypography.secondary,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.near_me_outlined, size: 16, color: AppColors.primary),
+                            const Icon(
+                              Icons.near_me_outlined,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 4),
-                            Text('Cách đội: ${task['distance']}', style: AppTypography.secondaryMedium.copyWith(color: AppColors.primaryDark)),
+                            Text(
+                              task['distance'].toString().isEmpty
+                                  ? 'Chưa có khoảng cách'
+                                  : 'Cách đội: ${task['distance']}',
+                              style: AppTypography.secondaryMedium.copyWith(
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
                             const Spacer(),
-                            Text(task['time'] as String, style: AppTypography.secondary.copyWith(fontSize: 13)),
+                            Text(
+                              task['time'] as String,
+                              style: AppTypography.secondary.copyWith(
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
-                        const Divider(height: 20, color: AppColors.borderSubtle),
+                        const Divider(
+                          height: 20,
+                          color: AppColors.borderSubtle,
+                        ),
                         Row(
                           children: [
                             Expanded(
-                              child: Text('Trang bị: ${task['tools']}', style: AppTypography.secondary.copyWith(fontSize: 13)),
+                              child: Text(
+                                task['tools'].toString().isEmpty
+                                    ? 'Chưa có thông tin trang bị'
+                                    : 'Trang bị: ${task['tools']}',
+                                style: AppTypography.secondary.copyWith(
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: AppColors.onPrimary,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               onPressed: () => _acceptTask(task),
-                              child: const Text('Tiếp nhận ngay'),
+                              child: const Text('Xem yêu cầu'),
                             ),
                           ],
                         ),

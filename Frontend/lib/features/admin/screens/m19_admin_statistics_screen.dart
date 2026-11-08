@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import '../../auth/screens/a01_role_selection_screen.dart';
+import '../../../core/widgets/sign_out.dart';
 
 class M19AdminStatisticsScreen extends StatelessWidget {
   const M19AdminStatisticsScreen({super.key});
@@ -13,7 +14,7 @@ class M19AdminStatisticsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: const AppHeader(
-        title: 'Báo cáo thống kê cứu trợ',
+        title: 'Thống kê cứu trợ (minh họa)',
         showBackButton: false,
       ),
       body: SafeArea(
@@ -37,20 +38,37 @@ class M19AdminStatisticsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tổng số người dân đã sơ tán an toàn',
-                        style: AppTypography.cardTitle.copyWith(color: Colors.white.withOpacity(0.9))),
+                    Text(
+                      'Tổng số người dân đã sơ tán an toàn',
+                      style: AppTypography.cardTitle.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('684 người', style: AppTypography.pageTitle.copyWith(color: Colors.white, fontSize: 36)),
+                    Text(
+                      '684 người',
+                      style: AppTypography.pageTitle.copyWith(
+                        color: Colors.white,
+                        fontSize: 36,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('Gồm: 142 trẻ em • 185 người cao tuổi • 357 người lớn',
-                        style: AppTypography.secondary.copyWith(color: Colors.white.withOpacity(0.85))),
+                    Text(
+                      'Gồm: 142 trẻ em • 185 người cao tuổi • 357 người lớn',
+                      style: AppTypography.secondary.copyWith(
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
               // Breakdown cards
-              Text('Hàng hóa & Nhu yếu phẩm đã cấp phát', style: AppTypography.sectionTitle),
+              Text(
+                'Nhu yếu phẩm đã cấp phát',
+                style: AppTypography.sectionTitle,
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -61,20 +79,39 @@ class M19AdminStatisticsScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildStatRow('Nước uống đóng chai (20L / bình)', '1,420 bình', '100% nhu cầu thiết yếu'),
+                    _buildStatRow(
+                      'Nước uống đóng chai (20L / bình)',
+                      '1,420 bình',
+                      '100% nhu cầu thiết yếu',
+                    ),
                     const Divider(height: 16, color: AppColors.borderSubtle),
-                    _buildStatRow('Lương khô & Mì ăn liền', '2,100 thùng', 'Đủ dự trữ 5-7 ngày'),
+                    _buildStatRow(
+                      'Lương khô và mì ăn liền',
+                      '2,100 thùng',
+                      'Đủ dự trữ 5-7 ngày',
+                    ),
                     const Divider(height: 16, color: AppColors.borderSubtle),
-                    _buildStatRow('Áo phao & Thiết bị nổi', '580 chiếc', 'Đã cấp cho hộ ven sông'),
+                    _buildStatRow(
+                      'Áo phao và thiết bị nổi',
+                      '580 chiếc',
+                      'Đã cấp cho hộ ven sông',
+                    ),
                     const Divider(height: 16, color: AppColors.borderSubtle),
-                    _buildStatRow('Túi thuốc gia đình & Sát trùng', '340 bộ', 'Hạn chế dịch bệnh sau lũ'),
+                    _buildStatRow(
+                      'Thuốc và vật tư y tế',
+                      '340 bộ',
+                      'Hạn chế dịch bệnh sau lũ',
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
               // Rescue Teams distribution
-              Text('Phân bổ lực lượng cứu hộ', style: AppTypography.sectionTitle),
+              Text(
+                'Phân bổ lực lượng cứu hộ',
+                style: AppTypography.sectionTitle,
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -85,11 +122,23 @@ class M19AdminStatisticsScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildTeamDistrictRow('Xã Nam Phương Tiến (Tâm lũ)', '10 đội', '22 xuồng máy'),
+                    _buildTeamDistrictRow(
+                      'Xã Nam Phương Tiến (Tâm lũ)',
+                      '10 đội',
+                      '22 xuồng máy',
+                    ),
                     const Divider(height: 16, color: AppColors.borderSubtle),
-                    _buildTeamDistrictRow('Xã Tân Tiến', '8 đội', '15 xuồng máy'),
+                    _buildTeamDistrictRow(
+                      'Xã Tân Tiến',
+                      '8 đội',
+                      '15 xuồng máy',
+                    ),
                     const Divider(height: 16, color: AppColors.borderSubtle),
-                    _buildTeamDistrictRow('Xã Hoàng Văn Thụ', '6 đội', '10 xuồng máy'),
+                    _buildTeamDistrictRow(
+                      'Xã Hoàng Văn Thụ',
+                      '6 đội',
+                      '10 xuồng máy',
+                    ),
                   ],
                 ),
               ),
@@ -97,11 +146,15 @@ class M19AdminStatisticsScreen extends StatelessWidget {
 
               // Export button
               AppButton(
-                text: 'Xuất báo cáo PDF / Excel',
+                text: 'Xuất báo cáo',
                 icon: Icons.file_download_outlined,
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đang tạo báo cáo thống kê tình hình cứu trợ (PDF)...')),
+                    const SnackBar(
+                      content: Text(
+                        'Chưa hỗ trợ xuất báo cáo. Số liệu trên màn hình là minh họa.',
+                      ),
+                    ),
                   );
                 },
               ),
@@ -109,14 +162,9 @@ class M19AdminStatisticsScreen extends StatelessWidget {
 
               // Logout
               AppButton(
-                text: 'Đăng xuất tài khoản Quản trị',
+                text: 'Đăng xuất',
                 variant: AppButtonVariant.secondary,
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const A01RoleSelectionScreen()),
-                    (route) => false,
-                  );
-                },
+                onPressed: () => signOut(context),
               ),
               const SizedBox(height: 24),
             ],
@@ -141,7 +189,10 @@ class M19AdminStatisticsScreen extends StatelessWidget {
             ],
           ),
         ),
-        Text(qty, style: AppTypography.cardTitle.copyWith(color: AppColors.primary)),
+        Text(
+          qty,
+          style: AppTypography.cardTitle.copyWith(color: AppColors.primary),
+        ),
       ],
     );
   }
@@ -160,7 +211,9 @@ class M19AdminStatisticsScreen extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '$teams • $boats',
-          style: AppTypography.secondaryMedium.copyWith(color: AppColors.primaryDark),
+          style: AppTypography.secondaryMedium.copyWith(
+            color: AppColors.primaryDark,
+          ),
         ),
       ],
     );

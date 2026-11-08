@@ -1,11 +1,13 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/widgets/sync_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import '../../citizen/screens/citizen_shell_screen.dart';
-import '../../rescue/screens/rescue_shell_screen.dart';
 
 class A04OtpVerificationScreen extends StatefulWidget {
   final String phoneNumber;
@@ -20,32 +22,23 @@ class A04OtpVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<A04OtpVerificationScreen> createState() => _A04OtpVerificationScreenState();
+  State<A04OtpVerificationScreen> createState() =>
+      _A04OtpVerificationScreenState();
 }
 
 class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
-  final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  int _countdown = 60;
+  final int _countdown = 0;
   Timer? _timer;
-  bool _isVerifying = false;
+  final bool _isVerifying = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _countdown = 60;
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() => _countdown--);
-      } else {
-        timer.cancel();
-      }
-    });
   }
 
   @override
@@ -60,62 +53,25 @@ class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
     super.dispose();
   }
 
-  void _verifyOtp() {
-    final otp = _otpControllers.map((c) => c.text).join();
-    if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đủ 6 chữ số mã xác thực OTP.')),
+  Future<void> _verifyOtp() async {
+    try {
+      await reliefRepository.api.json(
+        'POST',
+        '/auth/verify',
+        body: {
+          'phone': widget.phoneNumber,
+          'otp': _otpControllers.map((c) => c.text).join(),
+        },
       );
-      return;
-    }
-
-    setState(() => _isVerifying = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
-        setState(() => _isVerifying = false);
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.success, size: 28),
-                const SizedBox(width: 8),
-                Text('Xác thực thành công!', style: AppTypography.cardTitle),
-              ],
-            ),
-            content: Text(
-              widget.userRole == 'rescue'
-                  ? 'Hồ sơ đăng ký của đội đã được tiếp nhận và xác thực số điện thoại. Ban điều phối sẽ thẩm định minh chứng trong vòng 1-2 giờ.'
-                  : 'Tài khoản của bạn đã được kích hoạt thành công.',
-              style: AppTypography.body,
-            ),
-            actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  if (widget.userRole == 'rescue') {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const RescueShellScreen()),
-                      (route) => false,
-                    );
-                  } else {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const CitizenShellScreen()),
-                      (route) => false,
-                    );
-                  }
-                },
-                child: const Text('Bắt đầu sử dụng'),
-              ),
-            ],
-          ),
+        showFailure(
+          context,
+          'Hiện chưa thể xác minh số điện thoại. Tài khoản chưa được tạo.',
         );
       }
-    });
+    } catch (error) {
+      if (mounted) showFailure(context, error);
+    }
   }
 
   @override
@@ -123,7 +79,7 @@ class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Xác thực OTP',
+        title: 'Xác minh số điện thoại',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -142,20 +98,29 @@ class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
                     color: AppColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.mark_email_read_outlined, color: AppColors.primary, size: 34),
+                  child: const Icon(
+                    Icons.mark_email_read_outlined,
+                    color: AppColors.primary,
+                    size: 34,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text('Nhập mã xác thực', style: AppTypography.pageTitle.copyWith(fontSize: 22)),
+                Text(
+                  'Nhập mã xác minh',
+                  style: AppTypography.pageTitle.copyWith(fontSize: 22),
+                ),
                 const SizedBox(height: 8),
                 Text(
-                  'Mã xác thực gồm 6 chữ số đã được gửi qua tin nhắn SMS tới số điện thoại:',
+                  'Hiện chưa gửi được mã xác minh qua SMS đến số:',
                   textAlign: TextAlign.center,
                   style: AppTypography.secondary,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   widget.phoneNumber,
-                  style: AppTypography.cardTitle.copyWith(color: AppColors.primaryDark),
+                  style: AppTypography.cardTitle.copyWith(
+                    color: AppColors.primaryDark,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -178,7 +143,9 @@ class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
                           contentPadding: EdgeInsets.zero,
                           filled: true,
                           fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         onChanged: (val) {
                           if (val.isNotEmpty && index < 5) {
@@ -197,19 +164,24 @@ class _A04OtpVerificationScreenState extends State<A04OtpVerificationScreen> {
                 if (_countdown > 0)
                   Text(
                     'Gửi lại mã sau $_countdown giây',
-                    style: AppTypography.secondaryMedium.copyWith(color: AppColors.textSecondary),
+                    style: AppTypography.secondaryMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   )
                 else
                   TextButton.icon(
-                    onPressed: _startTimer,
+                    onPressed: () => showFailure(
+                      context,
+                      'Hiện chưa gửi được mã xác minh. Hãy thử lại sau.',
+                    ),
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Gửi lại mã OTP'),
+                    label: const Text('Gửi lại mã'),
                   ),
                 const SizedBox(height: 24),
 
                 // Verify Button
                 AppButton(
-                  text: 'Xác nhận & Kích hoạt tài khoản',
+                  text: 'Xác nhận',
                   isLoading: _isVerifying,
                   onPressed: _verifyOtp,
                 ),

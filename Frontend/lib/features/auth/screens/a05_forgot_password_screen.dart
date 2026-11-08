@@ -1,42 +1,41 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/widgets/sync_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import 'a04_otp_verification_screen.dart';
 
 class A05ForgotPasswordScreen extends StatefulWidget {
   final String userRole; // 'citizen' or 'rescue'
 
-  const A05ForgotPasswordScreen({
-    super.key,
-    this.userRole = 'citizen',
-  });
+  const A05ForgotPasswordScreen({super.key, this.userRole = 'citizen'});
 
   @override
-  State<A05ForgotPasswordScreen> createState() => _A05ForgotPasswordScreenState();
+  State<A05ForgotPasswordScreen> createState() =>
+      _A05ForgotPasswordScreenState();
 }
 
 class _A05ForgotPasswordScreenState extends State<A05ForgotPasswordScreen> {
   final _phoneController = TextEditingController();
 
-  void _sendOtp() {
-    if (_phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập số điện thoại đã đăng ký.')),
+  Future<void> _sendOtp() async {
+    try {
+      await reliefRepository.api.json(
+        'POST',
+        '/auth/recovery',
+        body: {'phone': _phoneController.text.trim()},
       );
-      return;
+      if (mounted) {
+        showFailure(
+          context,
+          'Hiện chưa gửi được mã xác minh. Mật khẩu của bạn chưa thay đổi.',
+        );
+      }
+    } catch (error) {
+      if (mounted) showFailure(context, error);
     }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => A04OtpVerificationScreen(
-          phoneNumber: _phoneController.text.trim(),
-          userRole: widget.userRole,
-          nextAction: 'forgot_password',
-        ),
-      ),
-    );
   }
 
   @override
@@ -46,7 +45,7 @@ class _A05ForgotPasswordScreenState extends State<A05ForgotPasswordScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: isRescue ? 'Khôi phục mật khẩu Đội cứu hộ' : 'Khôi phục mật khẩu',
+        title: isRescue ? 'Quên mật khẩu' : 'Quên mật khẩu',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -72,38 +71,50 @@ class _A05ForgotPasswordScreenState extends State<A05ForgotPasswordScreen> {
                         child: CircleAvatar(
                           radius: 28,
                           backgroundColor: AppColors.primaryContainer,
-                          child: Icon(Icons.lock_reset, color: AppColors.primaryDark, size: 32),
+                          child: Icon(
+                            Icons.lock_reset,
+                            color: AppColors.primaryDark,
+                            size: 32,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Center(
-                        child: Text('Quên mật khẩu?', style: AppTypography.cardTitle),
+                        child: Text(
+                          'Quên mật khẩu?',
+                          style: AppTypography.cardTitle,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         isRescue
-                            ? 'Nhập số điện thoại trưởng đội đã dùng để đăng ký. Hệ thống sẽ gửi mã OTP để đặt lại mật khẩu.'
-                            : 'Nhập số điện thoại đã dùng để đăng ký tài khoản. Hệ thống sẽ gửi mã OTP để bạn đặt lại mật khẩu mới.',
+                            ? 'Nhập số điện thoại đã đăng ký cho đội. Hiện chưa thể gửi mã xác minh qua SMS.'
+                            : 'Nhập số điện thoại đã đăng ký. Hiện chưa thể gửi mã xác minh qua SMS.',
                         textAlign: TextAlign.center,
                         style: AppTypography.secondary,
                       ),
                       const SizedBox(height: 20),
 
-                      Text('Số điện thoại', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Số điện thoại',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         style: AppTypography.body,
                         decoration: InputDecoration(
-                          hintText: isRescue ? 'Nhập số điện thoại trưởng đội' : 'Nhập số điện thoại của bạn',
+                          hintText: isRescue
+                              ? 'Nhập số điện thoại đã đăng ký'
+                              : 'Nhập số điện thoại của bạn',
                           prefixIcon: const Icon(Icons.phone_outlined),
                         ),
                       ),
                       const SizedBox(height: 24),
 
                       AppButton(
-                        text: 'Gửi mã xác thực OTP',
+                        text: 'Gửi mã xác minh',
                         icon: Icons.send,
                         onPressed: _sendOtp,
                       ),

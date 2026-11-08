@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
@@ -6,10 +7,12 @@ import '../../../core/widgets/app_header.dart';
 import 'r13_rescue_navigation_route_screen.dart';
 
 class R17OfflineDownloadScreen extends StatefulWidget {
-  const R17OfflineDownloadScreen({super.key});
+  final bool embedded;
+  const R17OfflineDownloadScreen({super.key, this.embedded = false});
 
   @override
-  State<R17OfflineDownloadScreen> createState() => _R17OfflineDownloadScreenState();
+  State<R17OfflineDownloadScreen> createState() =>
+      _R17OfflineDownloadScreenState();
 }
 
 class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
@@ -84,18 +87,26 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() => _isDownloading = false);
-        final assignedTasks = _availableRequests.take(_selectedBatchSize).toList();
+        final assignedTasks = _availableRequests
+            .take(_selectedBatchSize)
+            .toList();
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (dialogCtx) => AlertDialog(
             backgroundColor: AppColors.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
                 const SizedBox(width: 8),
-                Text('Tải thành công', style: AppTypography.cardTitle),
+                Text('Chưa tải dữ liệu', style: AppTypography.cardTitle),
               ],
             ),
             content: Column(
@@ -103,12 +114,14 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Đã phân công $_selectedBatchSize nhiệm vụ cho Đội Hương Thủy.',
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
+                  'Chưa phân công nhiệm vụ cho đội.',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primaryDark,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Bản đồ, tọa độ GPS và thông tin người dân đã được lưu ngoại tuyến. Đội có thể bắt đầu di chuyển khi không có mạng.',
+                  'Chưa hỗ trợ tải bản đồ ngoại tuyến. Danh sách này dùng để minh họa.',
                   style: AppTypography.body,
                 ),
               ],
@@ -118,15 +131,19 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
                 icon: const Icon(Icons.navigation, size: 20),
-                label: const Text('Bắt đầu dẫn đường'),
+                label: const Text('Xem bản đồ minh họa'),
                 onPressed: () {
                   Navigator.of(dialogCtx).pop();
-                  Navigator.of(context).pushReplacement(
+                  Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => R13RescueNavigationRouteScreen(tasks: assignedTasks),
+                      builder: (_) =>
+                          R13RescueNavigationRouteScreen(tasks: assignedTasks),
                     ),
                   );
                 },
@@ -141,14 +158,16 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
   @override
   Widget build(BuildContext context) {
     final previewList = _availableRequests.take(_selectedBatchSize).toList();
-    final totalPeople = previewList.fold<int>(0, (sum, item) => sum + (item['people'] as int));
+    final totalPeople = previewList.fold<int>(
+      0,
+      (sum, item) => sum + (item['people'] as int),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Tải danh sách ngoại tuyến',
-        showBackButton: true,
-        onBack: () => Navigator.of(context).pop(),
+        title: 'Danh sách ngoại tuyến',
+        showBackButton: !widget.embedded,
       ),
       body: SafeArea(
         child: Column(
@@ -170,7 +189,11 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.signal_wifi_off, color: AppColors.primaryDark, size: 26),
+                          const Icon(
+                            Icons.signal_wifi_off,
+                            color: AppColors.primaryDark,
+                            size: 26,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -178,11 +201,13 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                               children: [
                                 Text(
                                   'Chuẩn bị vào vùng mất sóng',
-                                  style: AppTypography.cardTitle.copyWith(color: AppColors.primaryDark),
+                                  style: AppTypography.cardTitle.copyWith(
+                                    color: AppColors.primaryDark,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Tải gói nhiệm vụ trước khi xuất phát. Hệ thống sẽ phân công danh sách này cho đội để tránh tiếp nhận trùng lặp.',
+                                  'Tải ngoại tuyến và phân công theo gói chưa khả dụng. Danh sách dưới đây là dữ liệu minh họa.',
                                   style: AppTypography.secondary,
                                 ),
                               ],
@@ -194,19 +219,34 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                     const SizedBox(height: 20),
 
                     // Batch size selector
-                    Text('Chọn số lượng nhiệm vụ cần tải', style: AppTypography.sectionTitle),
+                    Text(
+                      'Chọn số điểm muốn xem',
+                      style: AppTypography.sectionTitle,
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _buildBatchOption(3, '3 nhiệm vụ', 'Phù hợp 1 xuồng máy'),
+                        _buildBatchOption(
+                          3,
+                          '3 nhiệm vụ',
+                          'Phù hợp 1 xuồng máy',
+                        ),
                         const SizedBox(width: 10),
-                        _buildBatchOption(5, '5 nhiệm vụ', 'Phù hợp 2 xuồng máy'),
+                        _buildBatchOption(
+                          5,
+                          '5 nhiệm vụ',
+                          'Phù hợp 2 xuồng máy',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _buildBatchOption(10, '10 nhiệm vụ', 'Cụm xã Nam Phương Tiến'),
+                        _buildBatchOption(
+                          10,
+                          '10 nhiệm vụ',
+                          'Cụm xã Nam Phương Tiến',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -222,18 +262,41 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem('Số hộ nhận', '$_selectedBatchSize hộ', Icons.home_work_outlined),
-                          Container(width: 1, height: 36, color: AppColors.borderSubtle),
-                          _buildStatItem('Tổng số người', '$totalPeople người', Icons.people_outline),
-                          Container(width: 1, height: 36, color: AppColors.borderSubtle),
-                          _buildStatItem('Bán kính', 'Dưới 3.5 km', Icons.near_me_outlined),
+                          _buildStatItem(
+                            'Số hộ nhận',
+                            '$_selectedBatchSize hộ',
+                            Icons.home_work_outlined,
+                          ),
+                          Container(
+                            width: 1,
+                            height: 36,
+                            color: AppColors.borderSubtle,
+                          ),
+                          _buildStatItem(
+                            'Tổng số người',
+                            '$totalPeople người',
+                            Icons.people_outline,
+                          ),
+                          Container(
+                            width: 1,
+                            height: 36,
+                            color: AppColors.borderSubtle,
+                          ),
+                          _buildStatItem(
+                            'Bán kính',
+                            'Dưới 3.5 km',
+                            Icons.near_me_outlined,
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // List of tasks to be downloaded
-                    Text('Danh sách địa điểm tiếp nhận ($_selectedBatchSize điểm)', style: AppTypography.sectionTitle),
+                    Text(
+                      'Địa điểm cần hỗ trợ ($_selectedBatchSize điểm)',
+                      style: AppTypography.sectionTitle,
+                    ),
                     const SizedBox(height: 10),
                     ListView.separated(
                       shrinkWrap: true,
@@ -242,14 +305,17 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final item = previewList[index];
-                        final isEmergency = item['urgency'] == 'Cực kỳ khẩn cấp';
+                        final isEmergency =
+                            item['urgency'] == 'Cực kỳ khẩn cấp';
                         return Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isEmergency ? AppColors.danger.withOpacity(0.4) : AppColors.borderSubtle,
+                              color: isEmergency
+                                  ? AppColors.danger.withOpacity(0.4)
+                                  : AppColors.borderSubtle,
                             ),
                           ),
                           child: Column(
@@ -260,22 +326,57 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                                   CircleAvatar(
                                     radius: 12,
                                     backgroundColor: AppColors.primary,
-                                    child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(item['id'] as String, style: AppTypography.cardTitle.copyWith(color: AppColors.primaryDark)),
+                                  Text(
+                                    item['id'] as String,
+                                    style: AppTypography.cardTitle.copyWith(
+                                      color: AppColors.primaryDark,
+                                    ),
+                                  ),
                                   const Spacer(),
-                                  Text('Cách: ${item['distance']}', style: AppTypography.secondaryMedium.copyWith(color: AppColors.primaryDark)),
+                                  Text(
+                                    'Cách: ${item['distance']}',
+                                    style: AppTypography.secondaryMedium
+                                        .copyWith(color: AppColors.primaryDark),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              Text('${item['citizen']} • SĐT: ${item['phone']} (${item['people']} người)', style: AppTypography.bodyMedium),
+                              Text(
+                                '${item['citizen']} • SĐT: ${item['phone']} (${item['people']} người)',
+                                style: AppTypography.bodyMedium,
+                              ),
                               const SizedBox(height: 2),
-                              Text(item['address'] as String, style: AppTypography.secondary),
+                              Text(
+                                item['address'] as String,
+                                style: AppTypography.secondary,
+                              ),
                               const SizedBox(height: 4),
-                              Text('Nhu cầu: ${item['needs']}', style: AppTypography.secondaryMedium.copyWith(color: isEmergency ? AppColors.danger : AppColors.textPrimary)),
+                              Text(
+                                'Nhu cầu: ${item['needs']}',
+                                style: AppTypography.secondaryMedium.copyWith(
+                                  color: isEmergency
+                                      ? AppColors.danger
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Mốc nhận dạng: ${item['notes']}', style: AppTypography.secondary.copyWith(fontSize: 12, fontStyle: FontStyle.italic)),
+                              Text(
+                                'Mốc nhận diện: ${item['notes']}',
+                                style: AppTypography.secondary.copyWith(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -295,7 +396,7 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
                 border: Border(top: BorderSide(color: AppColors.borderSubtle)),
               ),
               child: AppButton(
-                text: 'Tải gói $_selectedBatchSize nhiệm vụ ngoại tuyến',
+                text: 'Xem bản đồ minh họa',
                 icon: Icons.cloud_download,
                 isLoading: _isDownloading,
                 onPressed: _startDownloadAndAssign,
@@ -329,16 +430,24 @@ class _R17OfflineDownloadScreenState extends State<R17OfflineDownloadScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: AppTypography.cardTitle.copyWith(fontSize: 16)),
+                  Text(
+                    title,
+                    style: AppTypography.cardTitle.copyWith(fontSize: 16),
+                  ),
                   Icon(
-                    isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                    isSelected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
                     color: isSelected ? AppColors.primary : AppColors.textMuted,
                     size: 20,
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text(subtitle, style: AppTypography.secondary.copyWith(fontSize: 12)),
+              Text(
+                subtitle,
+                style: AppTypography.secondary.copyWith(fontSize: 12),
+              ),
             ],
           ),
         ),

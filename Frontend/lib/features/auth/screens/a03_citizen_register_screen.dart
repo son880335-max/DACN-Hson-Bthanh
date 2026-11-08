@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
+import '../../../core/widgets/sync_status.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import 'a04_otp_verification_screen.dart';
 
 class A03CitizenRegisterScreen extends StatefulWidget {
   const A03CitizenRegisterScreen({super.key});
 
   @override
-  State<A03CitizenRegisterScreen> createState() => _A03CitizenRegisterScreenState();
+  State<A03CitizenRegisterScreen> createState() =>
+      _A03CitizenRegisterScreenState();
 }
 
 class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
@@ -20,29 +23,22 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
   final _addressController = TextEditingController();
   bool _obscurePassword = true;
 
-  void _proceedToOtp() {
-    if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng điền đầy đủ họ tên, số điện thoại và mật khẩu.')),
+  Future<void> _proceedToOtp() async {
+    try {
+      await reliefRepository.api.json(
+        'POST',
+        '/auth/register',
+        body: {'phone': _phoneController.text.trim()},
       );
-      return;
+      if (mounted) {
+        showFailure(
+          context,
+          'Hiện chưa thể xác minh số điện thoại. Tài khoản chưa được tạo.',
+        );
+      }
+    } catch (error) {
+      if (mounted) showFailure(context, error);
     }
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu xác nhận không khớp.')),
-      );
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => A04OtpVerificationScreen(
-          phoneNumber: _phoneController.text.trim(),
-          userRole: 'citizen',
-          nextAction: 'register',
-        ),
-      ),
-    );
   }
 
   @override
@@ -50,7 +46,7 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppHeader(
-        title: 'Đăng ký tài khoản Người dân',
+        title: 'Đăng ký tài khoản',
         showBackButton: true,
         onBack: () => Navigator.of(context).pop(),
       ),
@@ -87,7 +83,10 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Số điện thoại liên hệ', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Số điện thoại',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _phoneController,
@@ -100,13 +99,16 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Địa chỉ / Nơi cư trú', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Địa chỉ cư trú',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _addressController,
                         style: AppTypography.body,
                         decoration: const InputDecoration(
-                          hintText: 'Thôn/Xã, Huyện Chương Mỹ...',
+                          hintText: 'Nhập địa chỉ nơi bạn đang sống',
                           prefixIcon: Icon(Icons.location_on_outlined),
                         ),
                       ),
@@ -119,17 +121,26 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
                         obscureText: _obscurePassword,
                         style: AppTypography.body,
                         decoration: InputDecoration(
-                          hintText: 'Tối thiểu 6 ký tự',
+                          hintText: 'Tạo mật khẩu',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
 
-                      Text('Xác nhận mật khẩu', style: AppTypography.secondaryMedium),
+                      Text(
+                        'Xác nhận mật khẩu',
+                        style: AppTypography.secondaryMedium,
+                      ),
                       const SizedBox(height: 6),
                       TextField(
                         controller: _confirmPasswordController,
@@ -143,7 +154,7 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
                       const SizedBox(height: 24),
 
                       AppButton(
-                        text: 'Tiếp tục & Xác thực OTP',
+                        text: 'Tiếp tục',
                         icon: Icons.arrow_forward,
                         onPressed: _proceedToOtp,
                       ),
@@ -158,7 +169,12 @@ class _A03CitizenRegisterScreenState extends State<A03CitizenRegisterScreen> {
                     Text('Đã có tài khoản? ', style: AppTypography.secondary),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Đăng nhập ngay', style: AppTypography.secondaryMedium.copyWith(color: AppColors.primary)),
+                      child: Text(
+                        'Đăng nhập',
+                        style: AppTypography.secondaryMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   ],
                 ),

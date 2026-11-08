@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/data/relief_repository.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_header.dart';
@@ -22,22 +24,31 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Đăng xuất tài khoản', style: AppTypography.cardTitle),
-        content: Text('Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?', style: AppTypography.body),
+        title: Text('Đăng xuất', style: AppTypography.cardTitle),
+        content: Text('Bạn muốn đăng xuất?', style: AppTypography.body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Hủy', style: AppTypography.button.copyWith(color: AppColors.textSecondary)),
+            child: Text(
+              'Hủy',
+              style: AppTypography.button.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
               foregroundColor: AppColors.onDanger,
             ),
-            onPressed: () {
+            onPressed: () async {
+              await reliefRepository.logout();
+              if (!mounted || !ctx.mounted) return;
               Navigator.of(ctx).pop();
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const A01RoleSelectionScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const A01RoleSelectionScreen(),
+                ),
                 (route) => false,
               );
             },
@@ -96,12 +107,23 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Nguyễn Văn An', style: AppTypography.cardTitle),
+                          Text(
+                            reliefRepository.account?['displayName'] ?? 'Khách',
+                            style: AppTypography.cardTitle,
+                          ),
                           const SizedBox(height: 4),
-                          Text('0912 345 678', style: AppTypography.secondaryMedium),
+                          Text(
+                            reliefRepository.account?['phone'] ??
+                                'Chưa đăng nhập',
+                            style: AppTypography.secondaryMedium,
+                          ),
                           const SizedBox(height: 4),
-                          Text('Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
-                              style: AppTypography.secondary, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            'Thông tin tài khoản đã đăng nhập',
+                            style: AppTypography.secondary,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
                       ),
                     ),
@@ -111,30 +133,47 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
               const SizedBox(height: 24),
 
               // Settings Group 1
-              Text('Cài đặt thông báo & cảnh báo lũ', style: AppTypography.sectionTitle),
+              Text(
+                'Thông báo và cảnh báo lũ',
+                style: AppTypography.sectionTitle,
+              ),
               const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
+              Material(
+                color: AppColors.surface,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  side: const BorderSide(color: AppColors.borderSubtle),
                 ),
                 child: Column(
                   children: [
                     SwitchListTile(
-                      title: Text('Nhận cảnh báo mực nước lũ', style: AppTypography.bodyMedium),
-                      subtitle: Text('Thông báo khi có báo động lũ cấp 2, cấp 3 trên sông', style: AppTypography.secondary),
+                      title: Text(
+                        'Nhận cảnh báo mực nước lũ',
+                        style: AppTypography.bodyMedium,
+                      ),
+                      subtitle: Text(
+                        'Thông báo khi có báo động lũ cấp 2, cấp 3 trên sông',
+                        style: AppTypography.secondary,
+                      ),
                       value: _floodAlertsEnabled,
                       activeColor: AppColors.primary,
-                      onChanged: (val) => setState(() => _floodAlertsEnabled = val),
+                      onChanged: (val) =>
+                          setState(() => _floodAlertsEnabled = val),
                     ),
                     const Divider(height: 1, color: AppColors.borderSubtle),
                     SwitchListTile(
-                      title: Text('Tự động chuyển chế độ SMS', style: AppTypography.bodyMedium),
-                      subtitle: Text('Gửi tin nhắn khi mất kết nối mạng 3G/4G', style: AppTypography.secondary),
+                      title: Text(
+                        'Tự động chuyển chế độ SMS',
+                        style: AppTypography.bodyMedium,
+                      ),
+                      subtitle: Text(
+                        'Chưa hỗ trợ tự gửi tin nhắn khi mất mạng',
+                        style: AppTypography.secondary,
+                      ),
                       value: _smsFallbackEnabled,
                       activeColor: AppColors.primary,
-                      onChanged: (val) => setState(() => _smsFallbackEnabled = val),
+                      onChanged: (val) =>
+                          setState(() => _smsFallbackEnabled = val),
                     ),
                   ],
                 ),
@@ -142,41 +181,67 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
               const SizedBox(height: 24),
 
               // Settings Group 2: Account actions
-              Text('Hỗ trợ & Thông tin', style: AppTypography.sectionTitle),
+              Text('Hỗ trợ và thông tin', style: AppTypography.sectionTitle),
               const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
+              Material(
+                color: AppColors.surface,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  side: const BorderSide(color: AppColors.borderSubtle),
                 ),
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.help_outline, color: AppColors.primary),
-                      title: Text('Hướng dẫn kỹ năng an toàn mùa lũ', style: AppTypography.bodyMedium),
+                      leading: const Icon(
+                        Icons.help_outline,
+                        color: AppColors.primary,
+                      ),
+                      title: Text(
+                        'Hướng dẫn kỹ năng an toàn mùa lũ',
+                        style: AppTypography.bodyMedium,
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Mở cẩm nang hướng dẫn phòng chống lũ lụt...')),
+                          const SnackBar(
+                            content: Text(
+                              'Hướng dẫn an toàn chưa có sẵn trong ứng dụng.',
+                            ),
+                          ),
                         );
                       },
                     ),
                     const Divider(height: 1, color: AppColors.borderSubtle),
                     ListTile(
-                      leading: const Icon(Icons.lock_outline, color: AppColors.primary),
-                      title: Text('Đổi mật khẩu tài khoản', style: AppTypography.bodyMedium),
+                      leading: const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.primary,
+                      ),
+                      title: Text(
+                        'Đổi mật khẩu',
+                        style: AppTypography.bodyMedium,
+                      ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const A06ChangePasswordScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const A06ChangePasswordScreen(),
+                          ),
                         );
                       },
                     ),
                     const Divider(height: 1, color: AppColors.borderSubtle),
                     ListTile(
-                      leading: const Icon(Icons.logout, color: AppColors.danger),
-                      title: Text('Đăng xuất tài khoản', style: AppTypography.bodyMedium.copyWith(color: AppColors.danger)),
+                      leading: const Icon(
+                        Icons.logout,
+                        color: AppColors.danger,
+                      ),
+                      title: Text(
+                        'Đăng xuất',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.danger,
+                        ),
+                      ),
                       onTap: _logout,
                     ),
                   ],
@@ -188,9 +253,15 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
               Center(
                 child: Column(
                   children: [
-                    Text('Ứng dụng Cứu trợ đồng bào lũ lụt', style: AppTypography.secondaryMedium),
+                    Text(
+                      'Ứng dụng Cứu trợ đồng bào lũ lụt',
+                      style: AppTypography.secondaryMedium,
+                    ),
                     const SizedBox(height: 2),
-                    Text('Phiên bản 1.0.0', style: AppTypography.secondary.copyWith(fontSize: 12)),
+                    Text(
+                      'Phiên bản 1.0.0',
+                      style: AppTypography.secondary.copyWith(fontSize: 12),
+                    ),
                   ],
                 ),
               ),

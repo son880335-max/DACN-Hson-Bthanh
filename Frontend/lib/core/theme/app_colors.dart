@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Bảng màu chuẩn theo DESIGN.md: Cứu trợ đồng bào lũ lụt
 class AppColors {
   // Brand Primary: Deep River Teal
   static const Color primary = Color(0xFF176B64);
