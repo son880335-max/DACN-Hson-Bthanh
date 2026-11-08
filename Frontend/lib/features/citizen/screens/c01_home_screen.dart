@@ -3,9 +3,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_header.dart';
-import '../../../core/widgets/status_chip.dart';
+import '../../requests/widgets/request_home_panel.dart';
 import 'c02_request_wizard_step1_screen.dart';
-import 'c08_request_detail_waiting_screen.dart';
 import 'c15_sms_request_screen.dart';
 
 class C01HomeScreen extends StatelessWidget {
@@ -195,159 +194,7 @@ class C01HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Active Ongoing Request Section (CR-0247)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 8,
-                                  children: [
-                                    Text(
-                                      'Yêu cầu #CR-0247',
-                                      style: AppTypography.cardTitle,
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.surfaceContainerLow,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text('09:15', style: AppTypography.secondary.copyWith(fontSize: 13)),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on, size: 16, color: AppColors.textMuted),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Xã Nam Phương Tiến, Chương Mỹ',
-                                        style: AppTypography.secondary,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const StatusChip(status: ReliefStatus.pending),
-                        ],
-                      ),
-                      const Divider(height: 24, color: AppColors.borderSubtle),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.canvas,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.borderSubtle),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Chi tiết ghi nhận:', style: AppTypography.bodyMedium),
-                            const SizedBox(height: 4),
-                            Text(
-                              '3 người lớn, 1 trẻ sơ sinh. Nước ngập ngang hiên nhà, cạn kiệt đồ ăn.',
-                              style: AppTypography.body,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Đang xếp hàng phân công đội cứu hộ',
-                              style: AppTypography.secondary.copyWith(fontSize: 14),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const C08RequestDetailWaitingScreen(requestId: 'CR-0247'),
-                                ),
-                              );
-                            },
-                            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                            child: Text(
-                              'Xem chi tiết',
-                              style: AppTypography.secondaryMedium.copyWith(color: AppColors.primary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // Saved Draft Recovery (US-021)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderSubtle),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.edit_note, color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Bản nháp yêu cầu cứu trợ', style: AppTypography.cardTitle.copyWith(fontSize: 17)),
-                            Text('Tự động lưu lúc 08:30 (chưa gửi)', style: AppTypography.secondary.copyWith(fontSize: 14)),
-                          ],
-                        ),
-                      ),
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const C02RequestWizardStep1Screen(isDraft: true)),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(48, 48),
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: const Text('Tiếp tục'),
-                      ),
-                    ],
-                  ),
-                ),
+                const RequestHomePanel(),
               ],
             ),
           ),
@@ -356,76 +203,7 @@ class C01HomeScreen extends StatelessWidget {
     );
   }
 
-  bool _hasActiveRequest() => true;
-
   void _handleCreateRequest(BuildContext context) {
-    const activeRequestId = 'CR-0247';
-
-    if (_hasActiveRequest()) {
-      showDialog(
-        context: context,
-        builder: (dialogCtx) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 28),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text('Không thể tạo thêm yêu cầu', style: AppTypography.cardTitle),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Bạn đang có yêu cầu cứu hộ [$activeRequestId] đang trong trạng thái Đang chờ tiếp nhận.',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Theo quy định điều phối, bạn chỉ có thể tạo yêu cầu mới sau khi đội cứu trợ đã hoàn thành cứu hộ và có xác nhận hoàn tất nhiệm vụ hiện tại, nhằm đảm bảo nguồn lực xuồng máy không bị phân tán.',
-                style: AppTypography.secondary,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: const Text('Đóng'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.of(dialogCtx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const C08RequestDetailWaitingScreen(
-                      requestId: activeRequestId,
-                      initialStatus: ReliefStatus.waiting,
-                      title: 'Sơ tán khẩn cấp & Lương thực',
-                      address: 'Số 42, Thôn Nam Hài, Nam Phương Tiến, Chương Mỹ',
-                      people: 4,
-                      urgency: 'Cực kỳ khẩn cấp',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Xem đơn hiện tại'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const C02RequestWizardStep1Screen()),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const C02RequestWizardStep1Screen()));
   }
 }
