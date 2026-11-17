@@ -223,7 +223,7 @@ void main() {
         expect(
           find.text(switch (role) {
             'citizen' => 'Cứu trợ lũ lụt',
-            'rescue' => 'Yêu cầu đang phụ trách',
+            'rescue' => 'Nhiệm vụ chờ nhận',
             _ => 'Tổng quan cứu trợ (minh họa)',
           }),
           findsOneWidget,

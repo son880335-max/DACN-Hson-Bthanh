@@ -55,6 +55,73 @@ before(async () => {
 });
 after(async () => { await app?.close(); await db?.pool.end(); await postgres?.stop(); });
 
+test('Sprint 3: redact waiting tasks, link owners, serialize competing claims, transfer and return', async () => {
+  await clear();
+  const secondTeam=await account('second-team','+12025550119','rescue');
+  const primary=(await create()).json().requestId;
+  const linked=(await create(other)).json().requestId;
+  for(const id of [primary,linked]) {
+    const reviewed=await send('POST',`/requests/${id}/reviews`,admin,{operationId:randomUUID(),decision:'valid',reason:''},1);
+    assert.equal(reviewed.statusCode,201,reviewed.body);
+  }
+  const action=(id:string,token:string,revision:number,command:unknown)=>
+    send('POST',`/dispatch/${id}/actions`,token,{revision,command,operationId:randomUUID()});
+  const list=(mode:string,token:string,filters='')=>send('GET',`/dispatch?mode=${mode}${filters}`,token);
+  assert.equal((await list('admin',limited)).statusCode,403);
+  assert.equal((await list('waiting',citizen)).statusCode,403);
+  assert.equal((await send('GET',`/dispatch/${primary}`,other)).statusCode,404);
+  assert.equal((await send('GET',`/dispatch/${primary}`,rescue)).statusCode,404);
+  await db.pool.query('UPDATE accounts SET team_approved=false WHERE id=$1',[ids['second-team']]);
+  assert.ok([401,403].includes((await list('waiting',secondTeam)).statusCode));
+  await db.pool.query('UPDATE accounts SET team_approved=true WHERE id=$1',[ids['second-team']]);
+  const linkedResult=await action(linked,admin,2,{action:'link',primaryId:primary,reason:'Đã kiểm tra cùng địa điểm'});
+  assert.equal(linkedResult.statusCode,201,linkedResult.body);
+  const queue=await list('waiting',rescue,'&type='+encodeURIComponent('Sơ tán')+'&urgency=Cao&lat=0&lon=0&km=5');
+  assert.equal(queue.statusCode,200,queue.body);
+  const [summary]=queue.json().items;
+  assert.deepEqual(queue.json().items.map((r:any)=>r.id),[primary]);
+  assert.deepEqual(Object.keys(summary).sort(),['distanceKm','id','people','revision','status','types','urgency','verification']);
+  assert.equal(summary.people,4);
+  assert.equal((await list('waiting',rescue,'&lat=10&lon=10&km=5')).json().items.length,0);
+  const [a,b]=await Promise.all([action(primary,rescue,2,{action:'claim'}),action(primary,secondTeam,2,{action:'claim'})]);
+  assert.deepEqual([a.statusCode,b.statusCode].sort(),[201,409],a.body+' / '+b.body);
+  const winner=a.statusCode===201?rescue:secondTeam, loser=winner===rescue?secondTeam:rescue;
+  const loserId=winner===rescue?ids['second-team']:ids.rescue;
+  assert.equal((winner===rescue?b:a).json().code,'TASK_TAKEN');
+  assert.equal((await list('waiting',winner)).json().items.length,0);
+  assert.equal((await list('assigned',winner)).json().items.length,1);
+  assert.equal((await list('assigned',loser)).json().items.length,0);
+  assert.equal((await send('GET',`/dispatch/${primary}`,winner)).json().contact.phone,'+12025550101');
+  const linkedView=(await send('GET',`/dispatch/${linked}`,other)).json();
+  assert.equal(linkedView.status,'accepted');
+  assert.equal(linkedView.contact.phone,'+12025550102');
+  assert.equal((await action(primary,winner,3,{action:'progress',progress:'arrived'})).statusCode,409);
+  assert.equal((await action(primary,winner,3,{action:'progress',progress:'travelling'})).statusCode,201);
+  assert.equal((await action(primary,winner,4,{action:'progress',progress:'arrived'})).statusCode,201);
+  const adminSearch=await list('admin',admin,'&status=arrived&search='+encodeURIComponent('Địa điểm kiểm thử'));
+  assert.equal(adminSearch.statusCode,200,adminSearch.body);
+  assert.equal(adminSearch.json().items.length,2);
+  assert.equal((await action(primary,admin,5,{action:'assign',teamId:loserId,reason:'Đổi đội theo địa bàn'})).statusCode,201);
+  assert.equal((await send('GET',`/dispatch/${primary}`,winner)).statusCode,404);
+  assert.equal((await action(primary,loser,6,{action:'return',reason:'  '})).statusCode,422);
+  assert.equal((await action(primary,loser,6,{action:'return',reason:'Phương tiện hỏng'})).statusCode,201);
+  assert.equal((await list('waiting',rescue)).json().items.length,1);
+  const details=(await send('GET',`/dispatch/${primary}`,admin)).json();
+  assert.equal(details.teamName,null);
+  assert.equal(details.events[0].details.reason,'Phương tiện hỏng');
+  const notices=(await send('GET','/notices',other)).json().items;
+  assert.equal(notices.filter((notice:any)=>notice.kind==='dispatch.accepted').length,1);
+  assert.ok(notices.some((notice:any)=>notice.kind==='dispatch.returned'&&notice.requestId===linked));
+  assert.ok((await send('GET','/notices',admin)).json().items.some((notice:any)=>notice.kind==='dispatch.returned'));
+  await db.pool.query(`INSERT INTO request_history(request_id,actor_id,action,revision)
+    SELECT id,$2,'dispatch.partial',revision FROM relief_requests WHERE id=$1`,[primary,ids.rescue]);
+  await db.pool.query("UPDATE relief_requests SET stage='completed' WHERE id=$1",[primary]);
+  const finalNotices=(await send('GET','/notices',other)).json().items;
+  assert.ok(finalNotices.some((notice:any)=>notice.kind==='dispatch.partial'&&notice.requestId===linked));
+  assert.equal(finalNotices.filter((notice:any)=>notice.kind==='dispatch.completed'&&notice.requestId===linked).length,1);
+  assert.equal((await list('mine',other,'&status=completed')).json().items[0].id,linked);
+});
+
 test('authentication is real; registration never simulates phone verification', async () => {
   assert.equal((await send('GET', '/requests')).statusCode, 401);
   assert.equal((await send('POST', '/auth/login', undefined, { phone: '+12025550101', password: 'wrong' })).statusCode, 401);

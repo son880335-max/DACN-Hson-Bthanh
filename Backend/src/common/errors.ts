@@ -44,6 +44,10 @@ export class ApiErrorFilter implements ExceptionFilter {
     if (error instanceof ApiError) {
       return response.status(error.status).send({ code: error.code, message: error.message, requestId: request.id });
     }
+    if ((error as { code?: string })?.code === 'P3101') {
+      return response.status(409).send({ code: 'LINKED_REQUEST_IN_PROGRESS',
+        message: 'Đơn chính đã được tiếp nhận hoặc hỗ trợ. Không thể sửa hoặc hủy yêu cầu liên kết.', requestId: request.id });
+    }
     if (error instanceof ZodError) {
       return response.status(422).send({ code: 'VALIDATION_FAILED', message: 'Thông tin chưa hợp lệ.',
         fields: error.issues.map(i => ({ path: i.path.join('.'), message: validationMessage(i) })), requestId: request.id });

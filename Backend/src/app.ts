@@ -15,6 +15,7 @@ import { Operations } from './common/operations.js';
 import { EvidenceService } from './evidence/evidence.service.js';
 import { LocalObjectStorage, ObjectStorage, S3ObjectStorage } from './evidence/storage.js';
 import { RequestsService } from './requests/requests.service.js';
+import { dispatchController } from './dispatch/dispatch.controller.js';
 import { expectedRevision, reliefTypes, urgencyLevels } from './requests/schemas.js';
 
 const SERVICES = Symbol('services');
@@ -136,7 +137,7 @@ export async function createApp(config: AppConfig, db: Database, storage?: Objec
     }
   }
   const services: Services = { auth, requests, evidence: new EvidenceService(db, operations, requests, storage, config), db };
-  @Module({ controllers: [ApiController, HealthController], providers: [{ provide: SERVICES, useValue: services }] })
+  @Module({ controllers: [ApiController, HealthController, dispatchController(db, auth, operations)], providers: [{ provide: SERVICES, useValue: services }] })
   class AppModule {}
   const app = await NestFactory.create<NestFastifyApplication>(AppModule,
     new FastifyAdapter({ bodyLimit: 256 * 1024, logger: false, trustProxy: false,

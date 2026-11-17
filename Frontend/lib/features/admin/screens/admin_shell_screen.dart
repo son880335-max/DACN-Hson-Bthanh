@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import 'm02_admin_dashboard_screen.dart';
-import 'm03_admin_requests_lookup_screen.dart';
+import '../../dispatch/dispatch_screen.dart';
 import 'm07_admin_pending_teams_screen.dart';
 import 'm19_admin_statistics_screen.dart';
 
@@ -20,7 +20,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
   final List<Widget> _screens = const [
     M02AdminDashboardScreen(),
-    M03AdminRequestsLookupScreen(),
+    DispatchScreen('admin'),
     M07AdminPendingTeamsScreen(),
     M19AdminStatisticsScreen(),
   ];

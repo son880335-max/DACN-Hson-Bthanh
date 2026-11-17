@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import 'r06_my_team_screen.dart';
-import 'r07_waiting_tasks_screen.dart';
+import '../../dispatch/dispatch_screen.dart';
 import 'r17_offline_download_screen.dart';
 
 class RescueShellScreen extends StatefulWidget {
@@ -18,8 +18,8 @@ class _RescueShellScreenState extends State<RescueShellScreen> {
   final Set<int> _visited = {};
 
   final List<Widget> _screens = const [
-    R07WaitingTasksScreen(),
-    R07WaitingTasksScreen(),
+    DispatchScreen('waiting'),
+    DispatchScreen('assigned'),
     R17OfflineDownloadScreen(embedded: true),
     R06MyTeamScreen(),
   ];
