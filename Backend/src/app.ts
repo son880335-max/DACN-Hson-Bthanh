@@ -145,6 +145,15 @@ export async function createApp(config: AppConfig, db: Database, storage?: Objec
       logger: {
         level: config.NODE_ENV === 'production' ? 'info' : 'debug',
         redact: ['req.headers.authorization', 'headers.authorization'],
+        serializers: {
+          req(req: any) {
+            return {
+              id: req.id,
+              method: req.method,
+              url: (req.url || '').split('?')[0],
+            };
+          },
+        },
       },
       requestIdHeader: 'x-request-id',
       trustProxy: config.TRUST_PROXY,
