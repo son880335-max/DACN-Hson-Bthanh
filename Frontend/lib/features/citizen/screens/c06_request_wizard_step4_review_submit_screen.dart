@@ -41,12 +41,18 @@ class C06RequestWizardStep4ReviewSubmitScreen extends StatefulWidget {
 class _C06RequestWizardStep4ReviewSubmitScreenState
     extends State<C06RequestWizardStep4ReviewSubmitScreen> {
   bool _isSubmitting = false;
+  bool _consentAgreed = false;
   RequestDraft get _draft => widget.draft ?? RequestDraft();
 
   Future<void> _submitRequest() async {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
+      if (_consentAgreed) {
+        try {
+          await reliefRepository.api.json('POST', '/auth/consent', body: {'version': '2026.1'});
+        } catch (_) {}
+      }
       final result = await reliefRepository.submit(_draft);
       if (!mounted) return;
       if (result['pending'] == true) {
@@ -226,6 +232,56 @@ class _C06RequestWizardStep4ReviewSubmitScreenState
                       ],
                     ),
                     const SizedBox(height: 20),
+
+                    // Thông báo và ô đồng ý sử dụng dữ liệu (US-101 / Riêng tư tối thiểu)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.borderSubtle),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Checkbox(
+                                value: _consentAgreed,
+                                activeColor: AppColors.primary,
+                                onChanged: (val) =>
+                                    setState(() => _consentAgreed = val ?? false),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Tôi đồng ý cung cấp số điện thoại và vị trí để đội cứu hộ tiếp cận hỗ trợ khẩn cấp.',
+                                    style: AppTypography.secondaryMedium,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 12,
+                              right: 12,
+                              bottom: 4,
+                            ),
+                            child: Text(
+                              'Ưu tiên cứu trợ tính mạng: Bạn vẫn có thể gửi đơn cứu trợ bình thường ngay cả khi chưa tick đồng ý.',
+                              style: AppTypography.secondary.copyWith(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     // Warning notice
                     Container(

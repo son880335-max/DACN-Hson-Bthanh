@@ -13,6 +13,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/status_chip.dart';
 import 'c02_request_wizard_step1_screen.dart';
 import 'c08_request_detail_waiting_screen.dart';
+import '../../dispatch/dispatch_screen.dart';
 
 class C07MyRequestsScreen extends StatefulWidget {
   const C07MyRequestsScreen({super.key});
@@ -57,7 +58,26 @@ class _C07MyRequestsScreenState extends State<C07MyRequestsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: const AppHeader(title: 'Yêu cầu của tôi', showBackButton: false),
+      appBar: AppHeader(
+        title: 'Yêu cầu của tôi',
+        showBackButton: false,
+        actions: [
+          IconButton(
+            tooltip: 'Hướng dẫn cứu trợ',
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => showDispatchGuide(context),
+          ),
+          IconButton(
+            tooltip: 'Tiến độ và lịch sử',
+            icon: const Icon(Icons.history),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const DispatchScreen('mine'),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [

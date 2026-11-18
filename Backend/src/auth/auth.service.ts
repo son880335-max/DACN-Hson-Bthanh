@@ -22,21 +22,60 @@ export function normalizePhone(value: string) {
 
 export class AuthService {
   private readonly dummyHash = hash(randomBytes(32).toString('hex'), passwordOptions);
+  readonly pairFailures = new Map<string, { count: number; resetAt: number }>();
+  readonly phoneFailures = new Map<string, { count: number; resetAt: number }>();
   constructor(private readonly db: Database, private readonly config: AppConfig) {}
   private actor(row: any): Actor {
     return { id: row.id, phone: row.phone, displayName: row.display_name, role: row.role,
       permissions: row.permissions, verified: !!row.phone_verified_at,
       teamApproved: row.team_approved, testAccount: row.is_test_account };
   }
-  async login(input: unknown) {
+  async login(input: unknown, ip = '127.0.0.1') {
     const data = z.object({ phone: z.string().min(1).max(40), password: z.string().min(1).max(1024) }).strict().parse(input);
     const phone = normalizePhone(data.phone);
+    const clientIp = ip || '127.0.0.1';
+    const pairKey = `${phone}:${clientIp}`;
+    const now = Date.now();
+
+    for (const [k, v] of this.pairFailures) {
+      if (v.resetAt <= now) this.pairFailures.delete(k);
+    }
+    for (const [k, v] of this.phoneFailures) {
+      if (v.resetAt <= now) this.phoneFailures.delete(k);
+    }
+
+    const pair = this.pairFailures.get(pairKey);
+    if (pair && pair.count >= 5 && pair.resetAt > now) {
+      const retryAfter = Math.max(1, Math.ceil((pair.resetAt - now) / 1000));
+      throw new ApiError(429, 'RATE_LIMITED', 'Có quá nhiều lần thử đăng nhập không thành công. Hãy thử lại sau.', {
+        'Retry-After': retryAfter,
+      });
+    }
+
+    const phoneEntry = this.phoneFailures.get(phone);
+    if (phoneEntry && phoneEntry.count >= 20 && phoneEntry.resetAt > now) {
+      const retryAfter = Math.max(1, Math.ceil((phoneEntry.resetAt - now) / 1000));
+      throw new ApiError(429, 'RATE_LIMITED', 'Có quá nhiều lần thử đăng nhập không thành công. Hãy thử lại sau.', {
+        'Retry-After': retryAfter,
+      });
+    }
+
     const result = await this.db.pool.query('SELECT * FROM accounts WHERE phone=$1', [phone]);
     const row = result.rows[0];
     const valid = await verify(row?.password_hash ?? await this.dummyHash, data.password).catch(() => false);
     if (!row || !valid || row.locked_at || (this.config.NODE_ENV === 'production' && row.is_test_account)) {
+      const pairEntry = this.pairFailures.get(pairKey) ?? { count: 0, resetAt: now + 15 * 60_000 };
+      pairEntry.count++;
+      this.pairFailures.set(pairKey, pairEntry);
+
+      const pEntry = this.phoneFailures.get(phone) ?? { count: 0, resetAt: now + 15 * 60_000 };
+      pEntry.count++;
+      this.phoneFailures.set(phone, pEntry);
+
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'Số điện thoại hoặc mật khẩu không đúng.');
     }
+
+    this.pairFailures.delete(pairKey);
     if (!row.phone_verified_at) throw new ApiError(403, 'PHONE_NOT_VERIFIED', 'Tài khoản chưa được xác minh số điện thoại.');
     if (row.role === 'rescue' && !row.team_approved) throw new ApiError(403, 'TEAM_NOT_APPROVED', 'Đội chưa đủ quyền hoạt động.');
     const token = randomBytes(32).toString('base64url');
@@ -61,6 +100,20 @@ export class AuthService {
   async logout(authorization: string) {
     const token = authorization.slice(7);
     await this.db.pool.query('UPDATE sessions SET revoked_at=clock_timestamp() WHERE token_hash=$1 AND revoked_at IS NULL', [tokenHash(token)]);
+  }
+  async recordConsent(actor: Actor, body: unknown) {
+    const parsed = z.object({
+      version: z.string().trim().min(1).max(50),
+    }).parse(body);
+    const result = await this.db.pool.query(
+      `UPDATE accounts SET consent_version=$1, consented_at=clock_timestamp() WHERE id=$2 RETURNING consent_version, consented_at`,
+      [parsed.version, actor.id]
+    );
+    return {
+      consented: true,
+      consentVersion: result.rows[0]?.consent_version ?? parsed.version,
+      consentedAt: result.rows[0]?.consented_at ?? new Date(),
+    };
   }
 }
 

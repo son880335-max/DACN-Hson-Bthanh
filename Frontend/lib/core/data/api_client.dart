@@ -6,6 +6,13 @@ import 'package:http/http.dart' as http;
 
 import 'request_draft.dart';
 
+const Map<String, String> dispatchErrorMessages = {
+  'TASK_TAKEN': 'Nhiệm vụ vừa được đội khác tiếp nhận.',
+  'STALE_TASK': 'Nhiệm vụ đã thay đổi. Hãy tải lại.',
+  'RATE_LIMITED': 'Quá giới hạn truy vấn vị trí. Vui lòng thử lại sau.',
+  'TASK_UNAVAILABLE': 'Yêu cầu hiện không đủ điều kiện điều phối.',
+};
+
 class ApiFailure implements Exception {
   const ApiFailure(this.status, this.code, this.message);
   final int status;
@@ -93,12 +100,15 @@ class ApiClient {
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final fields = value['fields'] as List?;
+      final code = (value['code'] ?? 'REQUEST_FAILED') as String;
+      final customMsg = dispatchErrorMessages[code];
+      final rawMsg = fields?.isNotEmpty == true
+          ? '${value['message']} ${fields!.first['message']}'
+          : value['message'] as String?;
       throw ApiFailure(
         response.statusCode,
-        value['code'] ?? 'REQUEST_FAILED',
-        fields?.isNotEmpty == true
-            ? '${value['message']} ${fields!.first['message']}'
-            : value['message'] ?? 'Thao tác chưa thành công.',
+        code,
+        customMsg ?? rawMsg ?? 'Thao tác chưa thành công.',
       );
     }
     return value;

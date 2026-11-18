@@ -1,6 +1,6 @@
 {
-    "name": "flood_relief_app",
-    "short_name": "flood_relief_app",
+    "name": "Cứu trợ đồng bào lũ lụt",
+    "short_name": "Cứu trợ",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

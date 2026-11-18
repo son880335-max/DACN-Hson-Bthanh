@@ -1,9 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
-export interface ObjectStorage { put(key: string, bytes: Buffer): Promise<void>; get(key: string): Promise<Buffer>; }
+export interface ObjectStorage {
+  put(key: string, bytes: Buffer): Promise<void>;
+  get(key: string): Promise<Buffer>;
+  delete(key: string): Promise<void>;
+}
 function validKey(key: string) {
   if (!/^[a-f0-9-]{36}(?:\.thumb)?\.jpg$/.test(key)) throw new Error('Invalid internal media key');
   return key;
@@ -20,6 +24,10 @@ export class LocalObjectStorage implements ObjectStorage {
     } catch (error) { await unlink(temporary).catch(() => undefined); throw error; }
   }
   get(key: string) { return readFile(resolve(this.root, validKey(key))); }
+  async delete(key: string): Promise<void> {
+    const target = resolve(this.root, validKey(key));
+    await unlink(target).catch(() => undefined);
+  }
 }
 export class S3ObjectStorage implements ObjectStorage {
   constructor(private readonly client: S3Client, private readonly bucket: string) {}
@@ -32,5 +40,8 @@ export class S3ObjectStorage implements ObjectStorage {
     const object = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: validKey(key) }));
     if (!object.Body) throw new Error('Missing media body');
     return Buffer.from(await object.Body.transformToByteArray());
+  }
+  async delete(key: string): Promise<void> {
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: validKey(key) })).catch(() => undefined);
   }
 }

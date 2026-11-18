@@ -6,6 +6,7 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../auth/screens/a01_role_selection_screen.dart';
 import '../../auth/screens/a06_change_password_screen.dart';
+import 'c21_data_privacy_screen.dart';
 
 class C20ProfileScreen extends StatefulWidget {
   const C20ProfileScreen({super.key});
@@ -207,6 +208,25 @@ class _C20ProfileScreenState extends State<C20ProfileScreen> {
                             content: Text(
                               'Hướng dẫn an toàn chưa có sẵn trong ứng dụng.',
                             ),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1, color: AppColors.borderSubtle),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.privacy_tip_outlined,
+                        color: AppColors.primary,
+                      ),
+                      title: Text(
+                        'Thông tin sử dụng dữ liệu',
+                        style: AppTypography.bodyMedium,
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const C21DataPrivacyScreen(),
                           ),
                         );
                       },

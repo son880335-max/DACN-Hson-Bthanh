@@ -15,6 +15,7 @@ import { Operations } from './common/operations.js';
 import { EvidenceService } from './evidence/evidence.service.js';
 import { LocalObjectStorage, ObjectStorage, S3ObjectStorage } from './evidence/storage.js';
 import { RequestsService } from './requests/requests.service.js';
+import { dispatchController } from './dispatch/dispatch.controller.js';
 import { expectedRevision, reliefTypes, urgencyLevels } from './requests/schemas.js';
 
 const SERVICES = Symbol('services');
@@ -23,8 +24,12 @@ interface Services { auth: AuthService; requests: RequestsService; evidence: Evi
 class ApiController {
   private activeUploads=0;
   constructor(@Inject(SERVICES) private readonly service: Services) {}
-  @Post('auth/login') login(@Body() body: unknown) { return this.service.auth.login(body); }
+  @Post('auth/login') login(@Body() body: unknown, @Req() req: any) { return this.service.auth.login(body, req?.ip); }
   @Get('auth/me') me(@Headers('authorization') token?: string) { return this.service.auth.authenticate(token); }
+  @Post('auth/consent') async consent(@Headers('authorization') token: string, @Body() body: unknown) {
+    const actor = await this.service.auth.authenticate(token);
+    return this.service.auth.recordConsent(actor, body);
+  }
   @Delete('auth/session') async logout(@Headers('authorization') token: string) {
     await this.service.auth.authenticate(token); await this.service.auth.logout(token); return { signedOut: true };
   }
@@ -136,11 +141,30 @@ export async function createApp(config: AppConfig, db: Database, storage?: Objec
     }
   }
   const services: Services = { auth, requests, evidence: new EvidenceService(db, operations, requests, storage, config), db };
-  @Module({ controllers: [ApiController, HealthController], providers: [{ provide: SERVICES, useValue: services }] })
+  @Module({ controllers: [ApiController, HealthController, dispatchController(db, auth, operations)], providers: [{ provide: SERVICES, useValue: services }] })
   class AppModule {}
   const app = await NestFactory.create<NestFastifyApplication>(AppModule,
-    new FastifyAdapter({ bodyLimit: 256 * 1024, logger: false, trustProxy: false,
-      requestTimeout:35_000,connectionTimeout:10_000,keepAliveTimeout:5000 }), { logger: ['error', 'warn'] });
+    new FastifyAdapter({
+      bodyLimit: 256 * 1024,
+      logger: {
+        level: config.NODE_ENV === 'production' ? 'info' : 'debug',
+        redact: ['req.headers.authorization', 'headers.authorization'],
+        serializers: {
+          req(req: any) {
+            return {
+              id: req.id,
+              method: req.method,
+              url: (req.url || '').split('?')[0],
+            };
+          },
+        },
+      },
+      requestIdHeader: 'x-request-id',
+      trustProxy: config.TRUST_PROXY,
+      requestTimeout: 35_000,
+      connectionTimeout: 10_000,
+      keepAliveTimeout: 5000,
+    }), { logger: ['error', 'warn'] });
   app.useGlobalFilters(new ApiErrorFilter());
   await app.register(helmet);
   await app.register(cors, { origin: (origin, done) => done(null, !origin || config.origins.includes(origin)), credentials: false });

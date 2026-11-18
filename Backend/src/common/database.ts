@@ -40,6 +40,21 @@ export class Database {
 }
 
 export function createDatabase(connectionString: string) {
-  return new Database(new Pool({ connectionString, max: 5, connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30_000, application_name: 'flood-relief-api' }));
+  const pool = new Pool({
+    connectionString,
+    max: 5,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30_000,
+    application_name: 'flood-relief-api',
+  });
+  pool.on('error', (error: unknown) => {
+    const rawMessage = error instanceof Error ? error.message : 'unknown';
+    const sanitized = rawMessage.replace(/:\/\/.*@/, '://***@');
+    console.error(JSON.stringify({
+      event: 'database_pool_error',
+      message: 'Unexpected error on idle PostgreSQL client; process will not exit',
+      detail: sanitized,
+    }));
+  });
+  return new Database(pool);
 }

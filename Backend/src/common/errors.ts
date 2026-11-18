@@ -2,7 +2,14 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import { ZodError } from 'zod';
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message); }
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public headers?: Record<string, string | number>,
+  ) {
+    super(message);
+  }
 }
 
 function validationMessage(issue: ZodError['issues'][number]): string {
@@ -42,7 +49,29 @@ export class ApiErrorFilter implements ExceptionFilter {
     const response = host.switchToHttp().getResponse();
     const request = host.switchToHttp().getRequest();
     if (error instanceof ApiError) {
+      if (error.headers) {
+        for (const [key, val] of Object.entries(error.headers)) {
+          response.header(key, val);
+        }
+      }
+      if (error.status >= 500) {
+        console.error(JSON.stringify({
+          event: 'internal_api_error',
+          requestId: request.id,
+          code: error.code,
+          name: error.name,
+        }));
+        return response.status(error.status).send({
+          code: error.code || 'INTERNAL_ERROR',
+          message: 'Hệ thống chưa xử lý được. Hãy giữ thông tin và thử lại.',
+          requestId: request.id,
+        });
+      }
       return response.status(error.status).send({ code: error.code, message: error.message, requestId: request.id });
+    }
+    if ((error as { code?: string })?.code === 'P3101') {
+      return response.status(409).send({ code: 'LINKED_REQUEST_IN_PROGRESS',
+        message: 'Đơn chính đã được tiếp nhận hoặc hỗ trợ. Không thể sửa hoặc hủy yêu cầu liên kết.', requestId: request.id });
     }
     if (error instanceof ZodError) {
       return response.status(422).send({ code: 'VALIDATION_FAILED', message: 'Thông tin chưa hợp lệ.',

@@ -82,9 +82,18 @@ Mọi lần thử lại giữ **cùng operationId, payload và revision**. Biên
 
 Đây là phần triển khai Sprint 2 có kiểm thử, chưa phải sản phẩm đã nghiệm thu cứu trợ thực tế. Phải hoàn thành OTP/SMS thật, provisioning tài khoản/đội/admin, các sprint còn lại, kiểm thử camera/GPS/quyền và profiling thiết bị thật, kiểm thử tải/mạng yếu và khôi phục trước khi mở cho người dân.
 
-Production cần HTTPS, DB role tối thiểu và kết nối xác thực chứng chỉ khi qua mạng; DB/máy chủ/ảnh riêng tư có sao lưu và diễn tập phục hồi; logging không ghi token, mật khẩu, liên hệ hay tọa độ. Ảnh dùng volume bền vững được khai báo rõ hoặc storage S3 private qua IAM. Không dùng thư mục container tạm làm kho ảnh. `SESSION_HOURS`, giới hạn ảnh và rate limit trong `.env.example` là giá trị kỹ thuật mặc định cần hiệu chỉnh theo môi trường, không phải SLA hoặc cam kết bảo mật đã được nghiệm thu.
+Production cần HTTPS, DB role tối thiểu và kết nối xác thực chứng chỉ khi qua mạng (`DATABASE_URL` bắt buộc có `sslmode=require` hoặc `sslmode=verify-full` khi `NODE_ENV=production`, trừ khi đặt `DB_ALLOW_INSECURE=true` để kiểm thử); DB/máy chủ/ảnh riêng tư có sao lưu và diễn tập phục hồi; logging không ghi token, mật khẩu, liên hệ hay tọa độ. Khi triển khai sau reverse proxy (Nginx, Caddy, Cloudflare, load balancer), bật `TRUST_PROXY=true` để Fastify nhận diện chính xác địa chỉ IP của client thay vì IP proxy. Ảnh dùng volume bền vững được khai báo rõ hoặc storage S3 private qua IAM. Không dùng thư mục container tạm làm kho ảnh. `SESSION_HOURS`, giới hạn ảnh và rate limit trong `.env.example` là giá trị kỹ thuật mặc định cần hiệu chỉnh theo môi trường, không phải SLA hoặc cam kết bảo mật đã được nghiệm thu.
 
-Không public PostgreSQL ra Internet. Migration chạy với role quản trị schema; runtime dùng role không có quyền thay schema/tắt trigger. Rà soát vận hành, chính sách lưu giữ/xóa dữ liệu và mục tiêu khôi phục còn cần chủ dự án/đơn vị vận hành chốt. Rate limit hiện trong một instance; khi chạy nhiều instance cần kho giới hạn dùng chung và cấu hình proxy tin cậy rõ ràng. PostGIS chưa cài trong gói demo; truy vấn phạm vi/bản đồ quy mô lớn ở sprint sau cần migration không gian và đo tải riêng.
+Không public PostgreSQL ra Internet. Migration chạy với role quản trị schema; runtime dùng role không có quyền thay schema/tắt trigger. Rà soát vận hành, chính sách lưu giữ/xóa dữ liệu và mục tiêu khôi phục còn cần chủ dự án/đơn vị vận hành chốt.
+
+Giới hạn tần suất đăng nhập được bảo vệ 3 lớp:
+- Lớp 1 (Tầng mạng/IP): Hook `app.ts` giới hạn request chung theo IP (mặc định theo `LOGIN_ATTEMPTS_PER_MINUTE`).
+- Lớp 2 (Tầng xác thực/Cặp SĐT + IP): Trong `AuthService`, giới hạn 5 lần sai / 15 phút theo cặp (số điện thoại chuẩn hóa + IP). Thiết kế theo cặp SĐT + IP nhằm mục đích **tránh người ngoài cố tình nhập sai để khóa tài khoản người khác** (chống Account Lockout Denial-of-Service), đảm bảo chủ sở hữu hợp lệ từ IP thật vẫn có thể đăng nhập. Khi đăng nhập thành công, hệ thống chỉ xóa bộ đếm của riêng cặp (SĐT + IP) đó.
+- Lớp 3 (Ngưỡng chặn phân tán): Thêm ngưỡng riêng theo số điện thoại là 20 lần sai / 15 phút (tính tổng từ mọi IP) để ngăn chặn tấn công dò mật khẩu phân tán qua botnet.
+
+**Giới hạn đã biết về cơ chế giới hạn đăng nhập:**
+- *Khóa 20 lần/15 phút theo số điện thoại*: Ngưỡng này tính tổng mọi IP, do đó có thể bị người ngoài cố ý nhập sai liên tục để làm tê liệt tạm thời khả năng đăng nhập của chủ tài khoản (Denial-of-Service). Đây là đánh đổi có chủ đích nhằm chặn tấn công phân tán trong khi chưa tích hợp CAPTCHA hoặc OTP xác thực bước hai.
+- *Bộ đếm lưu trong RAM*: Bộ đếm đăng nhập lưu trong bộ nhớ tiến trình, chỉ có tác dụng đúng với mô hình chạy 1 instance. Khi mở rộng nhiều instance (multi-instance/cluster), cần kết nối kho dữ liệu chia sẻ (Redis) và cấu hình `TRUST_PROXY=true`. PostGIS chưa cài trong gói demo; truy vấn phạm vi/bản đồ quy mô lớn ở sprint sau cần migration không gian và đo tải riêng.
 
 ## Kiểm tra
 
