@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PoolClient } from 'pg';
 import { z } from 'zod';
 import { Actor, requireAdmin, requireRole } from '../auth/auth.service.js';
-import { recordAccessAudit } from '../common/audit.js';
+import { recordAccessAudit, recordBatchAccessAudit } from '../common/audit.js';
 import { AppConfig } from '../common/config.js';
 import { Database } from '../common/database.js';
 import { ApiError } from '../common/errors.js';
@@ -208,6 +208,9 @@ export class RequestsService {
       AND ($3::uuid IS NULL OR (r.created_at,r.id)<(SELECT created_at,id FROM relief_requests WHERE id=$3))
       ORDER BY r.created_at DESC,r.id DESC LIMIT 31`, [actor.role, actor.id, cursor]);
     const rows = result.rows.slice(0, 30);
+    if (actor.role === 'admin' && rows.length > 0) {
+      await recordBatchAccessAudit(this.db, actor, rows.map(r => r.id), 'list_contact_view');
+    }
     return { items: rows.map(r => ({ ...this.summary(r), address: r.data.address,
       ...(actor.role === 'admin' ? { contact: { name: r.display_name, phone: r.phone } } : {}) })),
       nextCursor: result.rows.length > 30 ? rows.at(-1).id : null };

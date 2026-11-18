@@ -21,3 +21,23 @@ export async function recordAccessAudit(
     [randomUUID(), actor.id, requestId, kind],
   );
 }
+
+export async function recordBatchAccessAudit(
+  db: Database,
+  actor: Actor,
+  requestIds: string[],
+  kind = 'list_contact_view',
+) {
+  if (actor.role !== 'admin' || requestIds.length === 0) return;
+  await db.pool.query(
+    `INSERT INTO access_audit (id, actor_id, request_id, kind, at)
+     SELECT gen_random_uuid(), $1, req_id, $2, clock_timestamp()
+     FROM unnest($3::uuid[]) AS req_id
+     WHERE NOT EXISTS (
+       SELECT 1 FROM access_audit
+       WHERE actor_id = $1 AND request_id = req_id
+       AND at > clock_timestamp() - interval '1 hour'
+     )`,
+    [actor.id, kind, requestIds],
+  );
+}

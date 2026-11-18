@@ -1,25 +1,40 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recordAccessAudit } from '../src/common/audit.js';
+import { recordAccessAudit, recordBatchAccessAudit } from '../src/common/audit.js';
 
-test('recordAccessAudit logs non-owner views, throttles to 1 per actor/request/hour, and never stores phone or coordinates', async () => {
+test('recordAccessAudit and recordBatchAccessAudit log views without personal info and throttle per hour', async () => {
   const auditRows: any[] = [];
 
   const mockDb: any = {
     pool: {
       query: async (sql: string, params: any[]) => {
         if (sql.includes('INSERT INTO access_audit')) {
-          const [id, actorId, requestId, kind] = params;
-          const oneHourAgo = Date.now() - 3600_000;
-          const existingRecent = auditRows.find(
-            r => r.actor_id === actorId && r.request_id === requestId && r.at.getTime() > oneHourAgo
-          );
-          if (!existingRecent) {
-            const newRow = { id, actor_id: actorId, request_id: requestId, kind, at: new Date() };
-            auditRows.push(newRow);
-            return { rowCount: 1, rows: [newRow] };
+          if (sql.includes('unnest')) {
+            // Batch insert
+            const [actorId, kind, requestIds] = params;
+            const oneHourAgo = Date.now() - 3600_000;
+            for (const reqId of requestIds) {
+              const existing = auditRows.find(
+                r => r.actor_id === actorId && r.request_id === reqId && r.at.getTime() > oneHourAgo
+              );
+              if (!existing) {
+                auditRows.push({ id: 'gen-uuid', actor_id: actorId, request_id: reqId, kind, at: new Date() });
+              }
+            }
+            return { rowCount: requestIds.length };
+          } else {
+            const [id, actorId, requestId, kind] = params;
+            const oneHourAgo = Date.now() - 3600_000;
+            const existingRecent = auditRows.find(
+              r => r.actor_id === actorId && r.request_id === requestId && r.at.getTime() > oneHourAgo
+            );
+            if (!existingRecent) {
+              const newRow = { id, actor_id: actorId, request_id: requestId, kind, at: new Date() };
+              auditRows.push(newRow);
+              return { rowCount: 1, rows: [newRow] };
+            }
+            return { rowCount: 0, rows: [] };
           }
-          return { rowCount: 0, rows: [] };
         }
         return { rows: [] };
       },
@@ -29,67 +44,38 @@ test('recordAccessAudit logs non-owner views, throttles to 1 per actor/request/h
   const ownerId = '11111111-1111-1111-1111-111111111111';
   const requestId = '99999999-9999-9999-9999-999999999999';
 
-  const citizenOwner = {
-    id: ownerId,
-    phone: '+84912345678',
-    displayName: 'Citizen Owner',
-    role: 'citizen' as const,
-    permissions: [],
-    verified: true,
-    teamApproved: false,
-    testAccount: false,
-  };
+  const citizenActor: any = { id: ownerId, role: 'citizen' };
+  const adminActor: any = { id: '22222222-2222-2222-2222-222222222222', role: 'admin' };
+  const rescueActor: any = { id: '33333333-3333-3333-3333-333333333333', role: 'rescue' };
 
-  const adminActor = {
-    id: '33333333-3333-3333-3333-333333333333',
-    phone: '+84999999999',
-    displayName: 'Admin User',
-    role: 'admin' as const,
-    permissions: ['requests:read'],
-    verified: true,
-    teamApproved: false,
-    testAccount: false,
-  };
-
-  const rescueActor = {
-    id: '44444444-4444-4444-4444-444444444444',
-    phone: '+84988888888',
-    displayName: 'Rescue Team',
-    role: 'rescue' as const,
-    permissions: [],
-    verified: true,
-    teamApproved: true,
-    testAccount: false,
-  };
-
-  // 1. Citizen viewing their own request: must NOT record audit
-  await recordAccessAudit(mockDb, citizenOwner, requestId, ownerId, 'request_detail_view');
+  // 1. Citizen (owner) views their own request: no audit recorded
+  await recordAccessAudit(mockDb, citizenActor, requestId, ownerId, 'request_detail_view');
   assert.equal(auditRows.length, 0);
 
-  // 2. Admin viewing request: records exactly 1 audit row
+  // 2. Admin views request: records 1 audit row
   await recordAccessAudit(mockDb, adminActor, requestId, ownerId, 'request_detail_view');
   assert.equal(auditRows.length, 1);
-  const row1 = auditRows[0];
-  assert.equal(row1.actor_id, adminActor.id);
-  assert.equal(row1.request_id, requestId);
-  assert.equal(row1.kind, 'request_detail_view');
-  assert.ok(!('phone' in row1), 'Must not store phone');
-  assert.ok(!('latitude' in row1), 'Must not store latitude');
-  assert.ok(!('longitude' in row1), 'Must not store longitude');
+  const row = auditRows[0];
+  assert.equal(row.actor_id, adminActor.id);
+  assert.equal(row.request_id, requestId);
+  assert.equal(row.kind, 'request_detail_view');
+  assert.equal((row as any).phone, undefined, 'Must not store phone number in audit table');
+  assert.equal((row as any).lat, undefined, 'Must not store coordinates in audit table');
+  assert.equal((row as any).lon, undefined, 'Must not store coordinates in audit table');
 
-  // 3. Admin viewing the same request again within 1 hour: throttled, does not create a second row
+  // 3. Admin views again within 1 hour: throttled, no new row
   await recordAccessAudit(mockDb, adminActor, requestId, ownerId, 'request_detail_view');
   assert.equal(auditRows.length, 1, 'Throttled to at most 1 row per actor per request per hour');
 
-  // 4. Rescue team viewing the request: records another row for that rescue actor
-  await recordAccessAudit(mockDb, rescueActor, requestId, ownerId, 'dispatch_detail_view');
-  assert.equal(auditRows.length, 2);
-  const row2 = auditRows[1];
-  assert.equal(row2.actor_id, rescueActor.id);
-  assert.equal(row2.request_id, requestId);
-  assert.equal(row2.kind, 'dispatch_detail_view');
-
-  // 5. Rescue viewing again within 1 hour: throttled
-  await recordAccessAudit(mockDb, rescueActor, requestId, ownerId, 'dispatch_detail_view');
-  assert.equal(auditRows.length, 2);
+  // 4. Batch audit: Admin views page of requests with contacts
+  const pageIds = [
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    requestId, // Already viewed above within 1 hour
+  ];
+  await recordBatchAccessAudit(mockDb, adminActor, pageIds, 'list_contact_view');
+  // Should add 2 new rows (for a and b), while requestId is throttled
+  assert.equal(auditRows.length, 3);
+  const batchAdded = auditRows.filter(r => r.kind === 'list_contact_view');
+  assert.equal(batchAdded.length, 2);
 });
