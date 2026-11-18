@@ -278,9 +278,11 @@ class _DispatchScreenState extends State<DispatchScreen> {
               ], (value) => urgency = value),
               if (position != null)
                 filter('Phạm vi (km)', radius?.toInt().toString(), [
+                  '1',
+                  '3',
                   '5',
                   '10',
-                  '25',
+                  '20',
                   '50',
                 ], (value) => radius = double.tryParse(value ?? '')),
               OutlinedButton.icon(

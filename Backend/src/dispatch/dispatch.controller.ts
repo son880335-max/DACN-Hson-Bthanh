@@ -18,12 +18,15 @@ const command = z.discriminatedUnion('action', [
 ]);
 const mutation = z.object({operationId:id,revision:z.number().int().positive(),command});
 const modes = z.enum(['mine','waiting','assigned','admin']);
+const allowedKm = [1, 3, 5, 10, 20, 50] as const;
 const query = z.object({
   mode:modes,before:id.optional(),search:z.string().trim().max(160).optional(),
   status:z.enum(['waiting','accepted','travelling','arrived','completed','cancelled','invalid']).optional(),
   type:z.enum(reliefTypes).optional(),urgency:z.enum(urgencyLevels).optional(),
   lat:z.coerce.number().min(-90).max(90).optional(),lon:z.coerce.number().min(-180).max(180).optional(),
-  km:z.coerce.number().positive().max(500).optional(),
+  km:z.coerce.number().refine((val): val is typeof allowedKm[number] => (allowedKm as readonly number[]).includes(val), {
+    message: 'Khoảng cách km chỉ nhận một trong các giá trị: 1, 3, 5, 10, 20, 50.',
+  }).optional(),
 }).refine(v=>v.km===undefined || (v.lat!==undefined && v.lon!==undefined));
 
 const projection = `
@@ -39,6 +42,7 @@ const projection = `
  LEFT JOIN accounts t ON t.id=a.rescuer_id`;
 
 export function dispatchController(db: Database, auth: AuthService, operations: Operations) {
+  const locationQueryLimits = new Map<string, { count: number; resetAt: number }>();
   @Controller('api/v1/dispatch')
   class DispatchController {
     @Get()
@@ -47,8 +51,32 @@ export function dispatchController(db: Database, auth: AuthService, operations: 
       if(f.mode==='mine') requireRole(actor,'citizen');
       else if(f.mode==='admin') requireAdmin(actor,'requests:read');
       else requireRole(actor,'rescue');
-      const distance=`6371*2*asin(sqrt(least(1.0,power(sin(radians(r.latitude-$6::double precision)/2),2)
-         +cos(radians($6::double precision))*cos(radians(r.latitude))*power(sin(radians(r.longitude-$7::double precision)/2),2))))`;
+
+      if (f.lat !== undefined && f.lon !== undefined) {
+        const now = Date.now();
+        for (const [k, v] of locationQueryLimits) {
+          if (v.resetAt <= now) locationQueryLimits.delete(k);
+        }
+        const entry = locationQueryLimits.get(actor.id) ?? { count: 0, resetAt: now + 60_000 };
+        if (entry.count >= 30 && entry.resetAt > now) {
+          const retryAfter = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+          throw new ApiError(429, 'RATE_LIMITED', 'Quá giới hạn 30 lần truy vấn vị trí mỗi phút. Vui lòng thử lại sau.', {
+            'Retry-After': retryAfter,
+          });
+        }
+        entry.count++;
+        locationQueryLimits.set(actor.id, entry);
+      }
+
+      const reqLat = f.mode === 'waiting' ? 'round(r.latitude::numeric, 2)::double precision' : 'r.latitude';
+      const reqLon = f.mode === 'waiting' ? 'round(r.longitude::numeric, 2)::double precision' : 'r.longitude';
+      const distance = `6371*2*asin(sqrt(least(1.0,power(sin(radians(${reqLat}-$6::double precision)/2),2)
+         +cos(radians($6::double precision))*cos(radians(${reqLat}))*power(sin(radians(${reqLon}-$7::double precision)/2),2))))`;
+      const visLat = f.mode === 'waiting' ? 'round(visible.latitude::numeric, 2)::double precision' : 'visible.latitude';
+      const visLon = f.mode === 'waiting' ? 'round(visible.longitude::numeric, 2)::double precision' : 'visible.longitude';
+      const distSelect = `6371*2*asin(sqrt(least(1.0,power(sin(radians(${visLat}-$6::double precision)/2),2)
+         +cos(radians($6::double precision))*cos(radians(${visLat}))*power(sin(radians(${visLon}-$7::double precision)/2),2))))`;
+
       const result=await db.pool.query(`
         WITH visible AS (${projection}, LATERAL (SELECT ${distance} AS km) d
          WHERE ($3::uuid IS NULL OR (r.created_at,r.id)<(SELECT created_at,id FROM relief_requests WHERE id=$3))
@@ -61,7 +89,7 @@ export function dispatchController(db: Database, auth: AuthService, operations: 
          AND ($5::text IS NULL OR r.data->>'urgency'=$5)
          AND ($8::double precision IS NULL OR d.km <= $8))
         SELECT visible.*,CASE WHEN $6::double precision IS NULL OR $7::double precision IS NULL
-          THEN NULL ELSE ${distance.replaceAll('r.latitude','visible.latitude').replaceAll('r.longitude','visible.longitude')} END km
+          THEN NULL ELSE ${distSelect} END km
         FROM visible WHERE ($9::text IS NULL OR status=$9)
           AND ($10::text IS NULL OR strpos(lower(id::text),lower($10))>0 OR strpos(lower(coalesce(data->>'address','')),lower($10))>0)
         ORDER BY created_at DESC,id DESC LIMIT 31`,
