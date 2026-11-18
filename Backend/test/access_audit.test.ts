@@ -46,7 +46,6 @@ test('recordAccessAudit and recordBatchAccessAudit log views without personal in
 
   const citizenActor: any = { id: ownerId, role: 'citizen' };
   const adminActor: any = { id: '22222222-2222-2222-2222-222222222222', role: 'admin' };
-  const rescueActor: any = { id: '33333333-3333-3333-3333-333333333333', role: 'rescue' };
 
   // 1. Citizen (owner) views their own request: no audit recorded
   await recordAccessAudit(mockDb, citizenActor, requestId, ownerId, 'request_detail_view');
@@ -78,4 +77,49 @@ test('recordAccessAudit and recordBatchAccessAudit log views without personal in
   assert.equal(auditRows.length, 3);
   const batchAdded = auditRows.filter(r => r.kind === 'list_contact_view');
   assert.equal(batchAdded.length, 2);
+});
+
+test('recordAccessAudit catches write error and logs audit_write_failed without PII', async () => {
+  const failingDb: any = {
+    pool: {
+      query: async () => {
+        throw new Error('connection lost');
+      },
+    },
+  };
+
+  const capturedErrors: string[] = [];
+  const originalError = console.error;
+  console.error = (msg: string) => {
+    capturedErrors.push(msg);
+  };
+
+  try {
+    const rescueActor: any = { id: '33333333-3333-3333-3333-333333333333', role: 'rescue' };
+    const requestId = '99999999-9999-9999-9999-999999999999';
+    const ownerId = '11111111-1111-1111-1111-111111111111';
+
+    // Must not throw, allows request to proceed
+    await recordAccessAudit(failingDb, rescueActor, requestId, ownerId, 'dispatch_detail_view');
+
+    assert.equal(capturedErrors.length, 1);
+    const entry0 = capturedErrors[0] ?? '';
+    const parsed = JSON.parse(entry0);
+    assert.equal(parsed.event, 'audit_write_failed');
+    assert.equal(parsed.requestId, requestId);
+    assert.ok(!entry0.includes('phone'));
+    assert.ok(!entry0.includes('lat'));
+    assert.ok(!entry0.includes('lon'));
+
+    // Also verify batch handles error safely
+    const adminActor: any = { id: '22222222-2222-2222-2222-222222222222', role: 'admin' };
+    await recordBatchAccessAudit(failingDb, adminActor, [requestId], 'list_contact_view');
+    assert.equal(capturedErrors.length, 2);
+    const entry1 = capturedErrors[1] ?? '';
+    const parsedBatch = JSON.parse(entry1);
+    assert.equal(parsedBatch.event, 'audit_write_failed');
+    assert.deepEqual(parsedBatch.requestIds, [requestId]);
+  } finally {
+    console.error = originalError;
+  }
 });
