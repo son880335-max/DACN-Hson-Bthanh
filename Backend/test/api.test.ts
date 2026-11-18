@@ -471,3 +471,17 @@ test('dispatch comprehensive rules: return task, progress order, admin transfer,
   assert.equal(chainLink.statusCode, 409, 'Liên kết vào đơn phụ đã được link phải bị chặn 409');
   assert.equal(chainLink.json().code, 'LINK_UNAVAILABLE');
 });
+
+test('POST /api/v1/auth/consent records consent_version and consented_at for current actor', async () => {
+  await clear();
+  const consentOwner = await account('consent-user', '+12025550199');
+  const res = await send('POST', '/auth/consent', consentOwner, { version: '2026.1' });
+  assert.equal(res.statusCode, 201, res.body);
+  assert.equal(res.json().consented, true);
+  assert.equal(res.json().consentVersion, '2026.1');
+  assert.ok(res.json().consentedAt);
+
+  const row = (await db.pool.query('SELECT consent_version, consented_at FROM accounts WHERE id=$1', [ids['consent-user']])).rows[0];
+  assert.equal(row.consent_version, '2026.1');
+  assert.ok(row.consented_at);
+});

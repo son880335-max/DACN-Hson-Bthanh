@@ -26,6 +26,10 @@ class ApiController {
   constructor(@Inject(SERVICES) private readonly service: Services) {}
   @Post('auth/login') login(@Body() body: unknown, @Req() req: any) { return this.service.auth.login(body, req?.ip); }
   @Get('auth/me') me(@Headers('authorization') token?: string) { return this.service.auth.authenticate(token); }
+  @Post('auth/consent') async consent(@Headers('authorization') token: string, @Body() body: unknown) {
+    const actor = await this.service.auth.authenticate(token);
+    return this.service.auth.recordConsent(actor, body);
+  }
   @Delete('auth/session') async logout(@Headers('authorization') token: string) {
     await this.service.auth.authenticate(token); await this.service.auth.logout(token); return { signedOut: true };
   }

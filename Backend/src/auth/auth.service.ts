@@ -101,6 +101,20 @@ export class AuthService {
     const token = authorization.slice(7);
     await this.db.pool.query('UPDATE sessions SET revoked_at=clock_timestamp() WHERE token_hash=$1 AND revoked_at IS NULL', [tokenHash(token)]);
   }
+  async recordConsent(actor: Actor, body: unknown) {
+    const parsed = z.object({
+      version: z.string().trim().min(1).max(50),
+    }).parse(body);
+    const result = await this.db.pool.query(
+      `UPDATE accounts SET consent_version=$1, consented_at=clock_timestamp() WHERE id=$2 RETURNING consent_version, consented_at`,
+      [parsed.version, actor.id]
+    );
+    return {
+      consented: true,
+      consentVersion: result.rows[0]?.consent_version ?? parsed.version,
+      consentedAt: result.rows[0]?.consented_at ?? new Date(),
+    };
+  }
 }
 
 export function requireRole(actor: Actor, role: Role) {
