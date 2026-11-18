@@ -357,3 +357,117 @@ test('dispatch location privacy on PostgreSQL: rounded distance in mode=waiting 
   const invalidKm = await send('GET', '/dispatch?mode=waiting&lat=16.50&lon=107.60&km=7', rescue);
   assert.equal(invalidKm.statusCode, 422, invalidKm.body);
 });
+
+test('dispatch comprehensive rules: return task, progress order, admin transfer, no chain link, unapproved team, 404 access, redacted queue card', async () => {
+  await clear();
+  const teamAlpha = await account('team-alpha', '+12025550181', 'rescue');
+  const teamBeta = await account('team-beta', '+12025550182', 'rescue');
+  const teamUnapproved = await account('team-unapproved', '+12025550183', 'rescue');
+  await db.pool.query("UPDATE accounts SET team_approved=false WHERE id=$1", [ids['team-unapproved']]);
+
+  const ownerA = await account('owner-a', '+12025550184');
+  const ownerB = await account('owner-b', '+12025550185');
+  const ownerC = await account('owner-c', '+12025550186');
+
+  const resA = await create(ownerA, { address: '123 Đường Lũ', latitude: 16.46, longitude: 107.59 });
+  assert.equal(resA.statusCode, 201, resA.body);
+  const reqA = resA.json().requestId;
+
+  const resB = await create(ownerB, { address: '456 Đường Lũ', latitude: 16.47, longitude: 107.60 });
+  assert.equal(resB.statusCode, 201, resB.body);
+  const reqB = resB.json().requestId;
+
+  const resC = await create(ownerC, { address: '789 Đường Lũ', latitude: 16.48, longitude: 107.61 });
+  assert.equal(resC.statusCode, 201, resC.body);
+  const reqC = resC.json().requestId;
+
+  await db.pool.query("UPDATE relief_requests SET stage='waiting', verification='valid' WHERE id=ANY($1::uuid[])", [
+    [reqA, reqB, reqC],
+  ]);
+
+  // 1. Thẻ trong hàng chờ KHÔNG chứa phone, address, latitude, longitude
+  const queueRes = await send('GET', '/dispatch?mode=waiting', teamAlpha);
+  assert.equal(queueRes.statusCode, 200, queueRes.body);
+  const queueCards = queueRes.json().items;
+  assert.ok(queueCards.length >= 3);
+  for (const card of queueCards) {
+    assert.equal(card.phone, undefined, 'Thẻ hàng chờ không được chứa phone');
+    assert.equal(card.address, undefined, 'Thẻ hàng chờ không được chứa address');
+    assert.equal(card.region, undefined, 'Thẻ hàng chờ không được chứa region/address');
+    assert.equal(card.latitude, undefined, 'Thẻ hàng chờ không được chứa latitude');
+    assert.equal(card.longitude, undefined, 'Thẻ hàng chờ không được chứa longitude');
+    assert.ok('distanceKm' in card, 'Thẻ hàng chờ có distanceKm');
+  }
+
+  // 2. Đội chưa duyệt bị chặn
+  const unapprovedClaim = await send('POST', `/dispatch/${reqA}/actions`, teamUnapproved, {
+    revision: 1, command: { action: 'claim' }, operationId: randomUUID(),
+  });
+  assert.ok([401, 403].includes(unapprovedClaim.statusCode), 'Đội chưa duyệt gọi action claim phải bị chặn 401/403');
+
+  const assignUnapproved = await send('POST', `/dispatch/${reqA}/actions`, admin, {
+    revision: 1, command: { action: 'assign', teamId: ids['team-unapproved'], reason: 'Chỉ định' }, operationId: randomUUID(),
+  });
+  assert.equal(assignUnapproved.statusCode, 422, 'Gán cho đội chưa duyệt phải nhận 422');
+  assert.equal(assignUnapproved.json().code, 'TEAM_NOT_AVAILABLE');
+
+  // 3. Đội khác xem chi tiết nhận 404
+  const claimA = await send('POST', `/dispatch/${reqA}/actions`, teamAlpha, {
+    revision: 1, command: { action: 'claim' }, operationId: randomUUID(),
+  });
+  assert.equal(claimA.statusCode, 201, claimA.body);
+
+  const teamBetaView = await send('GET', `/dispatch/${reqA}`, teamBeta);
+  assert.equal(teamBetaView.statusCode, 404, 'Đội khác không phụ trách xem chi tiết phải nhận 404');
+  assert.equal(teamBetaView.json().code, 'REQUEST_NOT_FOUND');
+
+  // 4. Cập nhật tiến độ sai thứ tự bị chặn
+  const skipProgress = await send('POST', `/dispatch/${reqA}/actions`, teamAlpha, {
+    revision: 2, command: { action: 'progress', progress: 'arrived' }, operationId: randomUUID(),
+  });
+  assert.equal(skipProgress.statusCode, 409, 'Nhảy cóc tiến độ từ accepted lên arrived phải bị chặn 409');
+  assert.equal(skipProgress.json().code, 'INVALID_PROGRESS');
+
+  const validProgress1 = await send('POST', `/dispatch/${reqA}/actions`, teamAlpha, {
+    revision: 2, command: { action: 'progress', progress: 'travelling' }, operationId: randomUUID(),
+  });
+  assert.equal(validProgress1.statusCode, 201, validProgress1.body);
+
+  const repeatProgress = await send('POST', `/dispatch/${reqA}/actions`, teamAlpha, {
+    revision: 3, command: { action: 'progress', progress: 'travelling' }, operationId: randomUUID(),
+  });
+  assert.equal(repeatProgress.statusCode, 409, 'Cập nhật lại tiến độ cũ phải bị chặn 409');
+  assert.equal(repeatProgress.json().code, 'INVALID_PROGRESS');
+
+  // 5. Admin chuyển đội
+  const transferRes = await send('POST', `/dispatch/${reqA}/actions`, admin, {
+    revision: 3, command: { action: 'assign', teamId: ids['team-beta'], reason: 'Đội Beta gần hơn' }, operationId: randomUUID(),
+  });
+  assert.equal(transferRes.statusCode, 201, transferRes.body);
+  assert.equal(transferRes.json().teamName, 'team-beta');
+
+  assert.equal((await send('GET', `/dispatch/${reqA}`, teamAlpha)).statusCode, 404, 'Đội cũ Alpha mất quyền xem chi tiết');
+  assert.equal((await send('GET', `/dispatch/${reqA}`, teamBeta)).statusCode, 200, 'Đội mới Beta xem được chi tiết');
+
+  // 6. Trả nhiệm vụ
+  const returnRes = await send('POST', `/dispatch/${reqA}/actions`, teamBeta, {
+    revision: 4, command: { action: 'return', reason: 'Xe bị sự cố ngập nước' }, operationId: randomUUID(),
+  });
+  assert.equal(returnRes.statusCode, 201, returnRes.body);
+  assert.equal(returnRes.json().status, 'waiting');
+
+  const queueAfterReturn = await send('GET', '/dispatch?mode=waiting', teamAlpha);
+  assert.ok(queueAfterReturn.json().items.some((item: any) => item.id === reqA), 'Yêu cầu phải quay lại hàng chờ');
+
+  // 7. Liên kết không tạo chuỗi
+  const link1 = await send('POST', `/dispatch/${reqB}/actions`, admin, {
+    revision: 1, command: { action: 'link', primaryId: reqC, reason: 'Cùng hộ gia đình' }, operationId: randomUUID(),
+  });
+  assert.equal(link1.statusCode, 201, link1.body);
+
+  const chainLink = await send('POST', `/dispatch/${reqA}/actions`, admin, {
+    revision: 5, command: { action: 'link', primaryId: reqB, reason: 'Tạo chuỗi liên kết' }, operationId: randomUUID(),
+  });
+  assert.equal(chainLink.statusCode, 409, 'Liên kết vào đơn phụ đã được link phải bị chặn 409');
+  assert.equal(chainLink.json().code, 'LINK_UNAVAILABLE');
+});
