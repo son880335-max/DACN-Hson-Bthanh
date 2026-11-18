@@ -54,6 +54,19 @@ export class ApiErrorFilter implements ExceptionFilter {
           response.header(key, val);
         }
       }
+      if (error.status >= 500) {
+        console.error(JSON.stringify({
+          event: 'internal_api_error',
+          requestId: request.id,
+          code: error.code,
+          name: error.name,
+        }));
+        return response.status(error.status).send({
+          code: error.code || 'INTERNAL_ERROR',
+          message: 'Hệ thống chưa xử lý được. Hãy giữ thông tin và thử lại.',
+          requestId: request.id,
+        });
+      }
       return response.status(error.status).send({ code: error.code, message: error.message, requestId: request.id });
     }
     if ((error as { code?: string })?.code === 'P3101') {
