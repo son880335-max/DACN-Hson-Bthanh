@@ -90,7 +90,10 @@ Giới hạn tần suất đăng nhập được bảo vệ 3 lớp:
 - Lớp 1 (Tầng mạng/IP): Hook `app.ts` giới hạn request chung theo IP (mặc định theo `LOGIN_ATTEMPTS_PER_MINUTE`).
 - Lớp 2 (Tầng xác thực/Cặp SĐT + IP): Trong `AuthService`, giới hạn 5 lần sai / 15 phút theo cặp (số điện thoại chuẩn hóa + IP). Thiết kế theo cặp SĐT + IP nhằm mục đích **tránh người ngoài cố tình nhập sai để khóa tài khoản người khác** (chống Account Lockout Denial-of-Service), đảm bảo chủ sở hữu hợp lệ từ IP thật vẫn có thể đăng nhập. Khi đăng nhập thành công, hệ thống chỉ xóa bộ đếm của riêng cặp (SĐT + IP) đó.
 - Lớp 3 (Ngưỡng chặn phân tán): Thêm ngưỡng riêng theo số điện thoại là 20 lần sai / 15 phút (tính tổng từ mọi IP) để ngăn chặn tấn công dò mật khẩu phân tán qua botnet.
-Lưu ý: Bộ đếm hiện lưu trong RAM của tiến trình, do đó chỉ áp dụng chính xác cho 1 instance; khi chạy nhiều instance cần chuyển sang kho lưu trữ tập trung (như Redis) và bật `TRUST_PROXY=true` khi đứng sau reverse proxy. PostGIS chưa cài trong gói demo; truy vấn phạm vi/bản đồ quy mô lớn ở sprint sau cần migration không gian và đo tải riêng.
+
+**Giới hạn đã biết về cơ chế giới hạn đăng nhập:**
+- *Khóa 20 lần/15 phút theo số điện thoại*: Ngưỡng này tính tổng mọi IP, do đó có thể bị người ngoài cố ý nhập sai liên tục để làm tê liệt tạm thời khả năng đăng nhập của chủ tài khoản (Denial-of-Service). Đây là đánh đổi có chủ đích nhằm chặn tấn công phân tán trong khi chưa tích hợp CAPTCHA hoặc OTP xác thực bước hai.
+- *Bộ đếm lưu trong RAM*: Bộ đếm đăng nhập lưu trong bộ nhớ tiến trình, chỉ có tác dụng đúng với mô hình chạy 1 instance. Khi mở rộng nhiều instance (multi-instance/cluster), cần kết nối kho dữ liệu chia sẻ (Redis) và cấu hình `TRUST_PROXY=true`. PostGIS chưa cài trong gói demo; truy vấn phạm vi/bản đồ quy mô lớn ở sprint sau cần migration không gian và đo tải riêng.
 
 ## Kiểm tra
 
