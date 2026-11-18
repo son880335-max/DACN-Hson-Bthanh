@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PoolClient } from 'pg';
 import { z } from 'zod';
 import { Actor, requireAdmin, requireRole } from '../auth/auth.service.js';
+import { recordAccessAudit } from '../common/audit.js';
 import { AppConfig } from '../common/config.js';
 import { Database } from '../common/database.js';
 import { ApiError } from '../common/errors.js';
@@ -171,6 +172,7 @@ export class RequestsService {
   }
   async get(actor: Actor, id: string) {
     const row = await this.canReadPrivate(actor, id);
+    await recordAccessAudit(this.db, actor, id, row.owner_id, 'request_detail_view');
     const [owner, photos, history, reports] = await Promise.all([
       this.db.pool.query('SELECT display_name,phone FROM accounts WHERE id=$1', [row.owner_id]),
       this.db.pool.query('SELECT id,byte_length,captured_at,latitude,longitude,received_at FROM evidence WHERE request_id=$1 ORDER BY received_at,id', [id]),

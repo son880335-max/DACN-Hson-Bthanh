@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { Actor, AuthService, requireAdmin, requireRole } from '../auth/auth.service.js';
+import { recordAccessAudit } from '../common/audit.js';
 import { Database } from '../common/database.js';
 import { ApiError } from '../common/errors.js';
 import { Operations } from '../common/operations.js';
@@ -30,7 +31,7 @@ const query = z.object({
 }).refine(v=>v.km===undefined || (v.lat!==undefined && v.lon!==undefined));
 
 const projection = `
- SELECT r.id,r.revision,r.stage,r.verification,r.primary_request_id,r.data,
+ SELECT r.id,r.owner_id,r.revision,r.stage,r.verification,r.primary_request_id,r.data,
    r.updated_at,r.created_at,r.latitude,r.longitude,owner.display_name owner_name,owner.phone,
    a.rescuer_id,t.display_name team_name,
    CASE WHEN coalesce(p.stage,r.stage)='accepted' THEN coalesce(a.progress,'accepted')
@@ -126,6 +127,7 @@ export function dispatchController(db: Database, auth: AuthService, operations: 
         [requestId,actor.id,actor.role]);
       const row=result.rows[0];
       if(!row) throw new ApiError(404,'REQUEST_NOT_FOUND','Không tìm thấy yêu cầu trong phạm vi truy cập.');
+      await recordAccessAudit(db, actor, requestId, row.owner_id, 'dispatch_detail_view');
       return {...card(row,false),data:row.data,contact:{name:row.owner_name,phone:row.phone},
         location:{latitude:row.latitude,longitude:row.longitude},events:row.events};
     }
