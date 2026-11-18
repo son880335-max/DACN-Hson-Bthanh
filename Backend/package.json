@@ -15,7 +15,8 @@
     "seed:week2": "tsx scripts/seed-week2.ts",
     "test": "npm run build && node --test --test-concurrency=1 dist/test/*.test.js",
     "check": "npm run build && npm test",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "maintenance": "tsx scripts/maintenance.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1164.0",

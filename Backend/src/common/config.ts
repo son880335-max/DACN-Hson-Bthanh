@@ -19,6 +19,7 @@ const envSchema = z.object({
   MAX_IMAGE_PIXELS: z.coerce.number().int().positive().default(20_000_000),
   MAX_EVIDENCE_LINKS: z.coerce.number().int().min(1).max(100).default(20),
   LOGIN_ATTEMPTS_PER_MINUTE: z.coerce.number().int().positive().default(10),
+  OPERATION_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
   DB_ALLOW_INSECURE: booleanFlag(false),
   TRUST_PROXY: booleanFlag(false),
 });
