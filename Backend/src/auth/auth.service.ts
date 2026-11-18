@@ -22,6 +22,7 @@ export function normalizePhone(value: string) {
 
 export class AuthService {
   private readonly dummyHash = hash(randomBytes(32).toString('hex'), passwordOptions);
+  readonly phoneFailures = new Map<string, { count: number; resetAt: number }>();
   constructor(private readonly db: Database, private readonly config: AppConfig) {}
   private actor(row: any): Actor {
     return { id: row.id, phone: row.phone, displayName: row.display_name, role: row.role,
@@ -31,12 +32,27 @@ export class AuthService {
   async login(input: unknown) {
     const data = z.object({ phone: z.string().min(1).max(40), password: z.string().min(1).max(1024) }).strict().parse(input);
     const phone = normalizePhone(data.phone);
+    const now = Date.now();
+    for (const [k, v] of this.phoneFailures) {
+      if (v.resetAt <= now) this.phoneFailures.delete(k);
+    }
+    const failure = this.phoneFailures.get(phone);
+    if (failure && failure.count >= 5 && failure.resetAt > now) {
+      const retryAfter = Math.max(1, Math.ceil((failure.resetAt - now) / 1000));
+      throw new ApiError(429, 'RATE_LIMITED', 'Có quá nhiều lần thử đăng nhập không thành công. Hãy thử lại sau.', {
+        'Retry-After': retryAfter,
+      });
+    }
     const result = await this.db.pool.query('SELECT * FROM accounts WHERE phone=$1', [phone]);
     const row = result.rows[0];
     const valid = await verify(row?.password_hash ?? await this.dummyHash, data.password).catch(() => false);
     if (!row || !valid || row.locked_at || (this.config.NODE_ENV === 'production' && row.is_test_account)) {
+      const entry = this.phoneFailures.get(phone) ?? { count: 0, resetAt: now + 15 * 60_000 };
+      entry.count++;
+      this.phoneFailures.set(phone, entry);
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'Số điện thoại hoặc mật khẩu không đúng.');
     }
+    this.phoneFailures.delete(phone);
     if (!row.phone_verified_at) throw new ApiError(403, 'PHONE_NOT_VERIFIED', 'Tài khoản chưa được xác minh số điện thoại.');
     if (row.role === 'rescue' && !row.team_approved) throw new ApiError(403, 'TEAM_NOT_APPROVED', 'Đội chưa đủ quyền hoạt động.');
     const token = randomBytes(32).toString('base64url');
