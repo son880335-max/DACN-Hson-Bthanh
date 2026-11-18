@@ -5,7 +5,7 @@ import { AuthService, passwordOptions } from '../src/auth/auth.service.js';
 import { loadConfig } from '../src/common/config.js';
 import { ApiError } from '../src/common/errors.js';
 
-test('AuthService rate limits 5 failed login attempts per normalized phone within 15 minutes', async () => {
+test('AuthService rate limits by (phone + IP) pair (5 fails) and phone threshold (20 fails), without locking out other IPs', async () => {
   const config = loadConfig({
     DATABASE_URL: 'postgresql://user:pass@127.0.0.1:5432/db',
     NODE_ENV: 'test',
@@ -46,10 +46,13 @@ test('AuthService rate limits 5 failed login attempts per normalized phone withi
 
   const auth = new AuthService(fakeDb, config);
 
-  // 1. First 4 failures return 401 INVALID_CREDENTIALS
-  for (let i = 1; i <= 4; i++) {
+  const ipAttacker = '192.168.1.100';
+  const ipVictim = '192.168.1.200';
+
+  // 1. Attacker fails 5 times for victim phone on ipAttacker
+  for (let i = 1; i <= 5; i++) {
     await assert.rejects(
-      () => auth.login({ phone: '0912345678', password: 'wrong-password' }),
+      () => auth.login({ phone: '0912345678', password: 'wrong-password' }, ipAttacker),
       (err: any) => {
         assert.ok(err instanceof ApiError);
         assert.equal(err.status, 401);
@@ -60,20 +63,9 @@ test('AuthService rate limits 5 failed login attempts per normalized phone withi
     );
   }
 
-  // 2. 5th failure also returns 401
+  // 6th attempt from ipAttacker is blocked with 429 + Retry-After
   await assert.rejects(
-    () => auth.login({ phone: '+84 912 345 678', password: 'wrong-password' }),
-    (err: any) => {
-      assert.ok(err instanceof ApiError);
-      assert.equal(err.status, 401);
-      assert.equal(err.code, 'INVALID_CREDENTIALS');
-      return true;
-    }
-  );
-
-  // 3. 6th attempt with the same phone (even normalized differently) is blocked with 429 + Retry-After
-  await assert.rejects(
-    () => auth.login({ phone: '0912345678', password: 'any-password' }),
+    () => auth.login({ phone: '+84 912 345 678', password: 'wrong-password' }, ipAttacker),
     (err: any) => {
       assert.ok(err instanceof ApiError);
       assert.equal(err.status, 429);
@@ -84,10 +76,43 @@ test('AuthService rate limits 5 failed login attempts per normalized phone withi
     }
   );
 
-  // 4. Non-existent account fails with the exact same error and also counts towards phone rate limit
-  const unknownPhone = '0987654321';
+  // 2. Legitimate user on ipVictim is NOT blocked by attacker's failed attempts (DoS prevention)
+  const legitSuccess = await auth.login({ phone: '0912345678', password: correctPassword }, ipVictim);
+  assert.ok(legitSuccess.token, 'Victim on different IP can still log in');
+
+  // Successful login only clears pairFailures for that pair (phone:ipVictim)
+  assert.equal(auth.pairFailures.has('+84912345678:192.168.1.200'), false);
+  // Attacker IP pair remains blocked
+  assert.equal(auth.pairFailures.has('+84912345678:192.168.1.100'), true);
+
+  // 3. Global phone threshold: 20 failures within 15 minutes across any IPs triggers global phone lock
+  // Step 1 recorded 5 failures in phoneFailures.
+  // Generate 15 more failures from unique IPs to reach 20 failures for this phone.
+  for (let i = 6; i <= 20; i++) {
+    await assert.rejects(
+      () => auth.login({ phone: '0912345678', password: 'wrong' }, `10.0.0.${i}`),
+      (err: any) => {
+        assert.equal(err.status, 401);
+        return true;
+      }
+    );
+  }
+
+  // 21st attempt from a brand new IP (10.0.0.99) is now blocked by the 20-failure global phone threshold
   await assert.rejects(
-    () => auth.login({ phone: unknownPhone, password: 'random-password' }),
+    () => auth.login({ phone: '0912345678', password: correctPassword }, '10.0.0.99'),
+    (err: any) => {
+      assert.ok(err instanceof ApiError);
+      assert.equal(err.status, 429);
+      assert.equal(err.code, 'RATE_LIMITED');
+      assert.ok(err.headers?.['Retry-After']);
+      return true;
+    }
+  );
+
+  // 4. Non-existent account fails with identical message
+  await assert.rejects(
+    () => auth.login({ phone: '0987654321', password: 'wrong' }, '1.2.3.4'),
     (err: any) => {
       assert.ok(err instanceof ApiError);
       assert.equal(err.status, 401);
@@ -96,17 +121,5 @@ test('AuthService rate limits 5 failed login attempts per normalized phone withi
       return true;
     }
   );
-
-  // 5. Successful login resets counter
-  // Reset the blocked phone's failure map entry to simulate timer expiration or fresh state
-  auth.phoneFailures.delete('+84912345678');
-  // First make 2 failures
-  await assert.rejects(() => auth.login({ phone: '0912345678', password: 'wrong' }));
-  await assert.rejects(() => auth.login({ phone: '0912345678', password: 'wrong' }));
-  assert.equal(auth.phoneFailures.get('+84912345678')?.count, 2);
-
-  // Successful login
-  const success = await auth.login({ phone: '0912345678', password: correctPassword });
-  assert.ok(success.token);
-  assert.equal(auth.phoneFailures.has('+84912345678'), false, 'Successful login must reset phone failure counter');
 });
+

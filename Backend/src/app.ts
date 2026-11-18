@@ -24,7 +24,7 @@ interface Services { auth: AuthService; requests: RequestsService; evidence: Evi
 class ApiController {
   private activeUploads=0;
   constructor(@Inject(SERVICES) private readonly service: Services) {}
-  @Post('auth/login') login(@Body() body: unknown) { return this.service.auth.login(body); }
+  @Post('auth/login') login(@Body() body: unknown, @Req() req: any) { return this.service.auth.login(body, req?.ip); }
   @Get('auth/me') me(@Headers('authorization') token?: string) { return this.service.auth.authenticate(token); }
   @Delete('auth/session') async logout(@Headers('authorization') token: string) {
     await this.service.auth.authenticate(token); await this.service.auth.logout(token); return { signedOut: true };
