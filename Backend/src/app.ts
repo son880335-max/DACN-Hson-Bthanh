@@ -140,7 +140,7 @@ export async function createApp(config: AppConfig, db: Database, storage?: Objec
   @Module({ controllers: [ApiController, HealthController, dispatchController(db, auth, operations)], providers: [{ provide: SERVICES, useValue: services }] })
   class AppModule {}
   const app = await NestFactory.create<NestFastifyApplication>(AppModule,
-    new FastifyAdapter({ bodyLimit: 256 * 1024, logger: false, trustProxy: false,
+    new FastifyAdapter({ bodyLimit: 256 * 1024, logger: false, trustProxy: config.TRUST_PROXY,
       requestTimeout:35_000,connectionTimeout:10_000,keepAliveTimeout:5000 }), { logger: ['error', 'warn'] });
   app.useGlobalFilters(new ApiErrorFilter());
   await app.register(helmet);
