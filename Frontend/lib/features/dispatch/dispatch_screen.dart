@@ -162,7 +162,11 @@ class _DispatchScreenState extends State<DispatchScreen> {
   Future<void> open(Json item) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => DispatchDetail(item: item, mode: widget.mode),
+        builder: (_) => DispatchDetail(
+          item: item,
+          mode: widget.mode,
+          onConflict: () => unawaited(load()),
+        ),
       ),
     );
     if (mounted) await load();
@@ -368,9 +372,15 @@ class _DispatchScreenState extends State<DispatchScreen> {
 }
 
 class DispatchDetail extends StatefulWidget {
-  const DispatchDetail({super.key, required this.item, required this.mode});
+  const DispatchDetail({
+    super.key,
+    required this.item,
+    required this.mode,
+    this.onConflict,
+  });
   final Json item;
   final String mode;
+  final VoidCallback? onConflict;
 
   @override
   State<DispatchDetail> createState() => _DispatchDetailState();
@@ -473,6 +483,16 @@ class _DispatchDetailState extends State<DispatchDetail> {
     } on ApiFailure catch (failure) {
       if (!mounted) return;
       message(context, failure.message);
+      if ({'TASK_TAKEN', 'STALE_TASK', 'TASK_UNAVAILABLE', 'RATE_LIMITED'}.contains(failure.code)) {
+        widget.onConflict?.call();
+        setState(() => pending = null);
+        if (waiting && current == null) {
+          Navigator.pop(context);
+        } else {
+          await read();
+        }
+        return;
+      }
       if (!failure.retryable) {
         setState(() => pending = null);
         if (waiting && current == null) {
