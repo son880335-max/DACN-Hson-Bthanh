@@ -333,3 +333,27 @@ test('committed operations survive app restart and migrations can be run twice',
   await app.close(); await db.migrate(); app = await createApp(config, db);
   assert.deepEqual((await send('POST', '/requests', citizen, body)).json(), first);
 });
+
+test('dispatch location privacy on PostgreSQL: rounded distance in mode=waiting and km validation', async () => {
+  await clear();
+  const ownerA = await account('citizen-a', '+12025550131');
+  const ownerB = await account('citizen-b', '+12025550132');
+
+  const req1 = await create(ownerA, { latitude: 16.4611, longitude: 107.5911 });
+  assert.equal(req1.statusCode, 201, req1.body);
+  const req2 = await create(ownerB, { latitude: 16.4644, longitude: 107.5944 });
+  assert.equal(req2.statusCode, 201, req2.body);
+
+  await db.pool.query("UPDATE relief_requests SET stage='waiting', verification='valid' WHERE id=ANY($1::uuid[])", [
+    [req1.json().requestId, req2.json().requestId],
+  ]);
+
+  const queryWaiting = await send('GET', '/dispatch?mode=waiting&lat=16.50&lon=107.60&km=10', rescue);
+  assert.equal(queryWaiting.statusCode, 200, queryWaiting.body);
+  const items = queryWaiting.json().items;
+  assert.equal(items.length, 2);
+  assert.equal(items[0].distanceKm, items[1].distanceKm);
+
+  const invalidKm = await send('GET', '/dispatch?mode=waiting&lat=16.50&lon=107.60&km=7', rescue);
+  assert.equal(invalidKm.statusCode, 422, invalidKm.body);
+});
